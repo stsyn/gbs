@@ -1,0 +1,32 @@
+<NotepadPlus>
+    <Project name="GBS">
+        <Folder name="i">
+            <File name="i\legal.txt" />
+        </Folder>
+        <Folder name="src">
+            <Folder name="entities">
+                <File name="src\entities\ministries.js" />
+                <File name="src\entities\perks.js" />
+                <File name="src\entities\specs.js" />
+                <File name="src\entities\world.js" />
+                <File name="src\entities\tasks.js" />
+            </Folder>
+            <Folder name="lang">
+                <File name="src\lang\ru.js" />
+            </Folder>
+            <Folder name="content">
+                <File name="src\content\specs.js" />
+                <File name="src\content\perks.js" />
+                <File name="src\content\tasks.js" />
+            </Folder>
+            <File name="src\fontload.js" />
+            <File name="src\loader.js" />
+            <File name="src\utils.js" />
+            <File name="src\zero.js" />
+            <File name="src\game.js" />
+            <File name="src\player.js" />
+        </Folder>
+        <File name="index.html" />
+        <File name="style.css" />
+    </Project>
+</NotepadPlus>
