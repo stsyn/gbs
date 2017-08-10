@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+	<link rel="stylesheet" href="style.css">
+	<script type="text/javascript" src="src/inferno.min.js"></script>
+	<script type="text/javascript" src="src/inferno-component.min.js"></script>
+	<script type="text/javascript" src="src/inferno-create-element.min.js"></script>
+	<script type="text/javascript" src="src/loader.js"></script>
+	<script async type="text/javascript" src="src/fontload.js"></script>
+</head>
+<body>
+	
+	<div id="top">
+		<span class="b menukey">Меню</span>
+		<span class="b menukey">Специалисты</span>
+		<span class="b menukey">Эквестрия</span>
+		<span class="b menukey">Министерства</span>
+		<span class="b c na">12:40 21/05/1863</span>
+		<span class="b r ico1"><svg xmlns="http://www.w3.org/2000/svg" height="64" width="64" viewBox="0 0 64 64"><g><path fill="#000" d="m32,0,32,32-32,32z"/><path d="m0,0,32,32-32,32z"/></g></svg></span>
+		<span class="b r ico1"><svg xmlns="http://www.w3.org/2000/svg" height="64" width="64" viewBox="0 0 64 64"><g><path fill="#000" d="M20,0,52,32,20,64z"/></g></svg></span>
+		<span class="b r ico1"><svg xmlns="http://www.w3.org/2000/svg" height="64" width="64" viewBox="0 0 64 64"><g><path d="m44,4,0,56,12,0,0-56z"/><path d="M8,0,40,32,8,64z"/></g></svg></span>
+		<span class="b r ico1"><svg xmlns="http://www.w3.org/2000/svg" height="64" width="64" viewBox="0 0 64 64"><g><path fill="#000" d="m40,4,0,56,12,0,0-56z"/><path d="m12,4,0,56,12,0,0-56z"/></g></svg></span>
+		<span class="b menukey r">Проигрыватель</span>
+		<span class="b menukey r">Технологии</span>
+	</div>
+	
+	<div id="messages">
+	</div>
+	
+	<div id="bottom">
+		<div class="container">
+			<div class="s al">
+				<img class="p" src="res\portraits\1.png">
+				<div class="task" style="background-position:-700% 0"></div>
+				<div class="level" style="background-position:-200% 0"></div>
+				<div class="report" style="background-position:-200% 0"></div>
+				<div class="n">Твайлайт Спаркл</div>
+				<div class="c">Ученый</div>
+				<div class="stat">
+					<div class="progress" style="width:60%"></div>
+					<div class="prof label">60%</div>
+					<div class="city label">Кантерлот</div>
+				</div>
+			</div>
+			<div class="s al">
+				<img class="p" src="res\portraits\2.png">
+				<div class="task" style="background-position:-800% 0"></div>
+				<div class="level" style="background-position:-400% 0"></div>
+				<div class="report" style="background-position:-100% 0"></div>
+				<div class="n">Эпплджек</div>
+				<div class="c">Военный</div>
+				<div class="stat">
+					<div class="progress" style="width:40%"></div>
+					<div class="prof label">40%</div>
+					<div class="city label">Понивилль</div>
+				</div>
+			</div>
+			<div class="s">
+				<img class="p" src="res\portraits\3.png">
+				<div class="task" style="background-position:-900% 0"></div>
+				<div class="level" style="background-position:-600% 0"></div>
+				<div class="report" style="background-position:0 0"></div>
+				<div class="n">Рэйнбоу Дэш</div>
+				<div class="c">Шпион</div>
+				<div class="stat">
+					<div class="progress" style="width:73%"></div>
+					<div class="prof label">73%</div>
+					<div class="city label">Клаудсдейл</div>
+				</div>
+			</div>
+			<div class="s">
+				<img class="p" src="res\portraits\4.png">
+				<div class="task" style="background-position:-300% 0"></div>
+				<div class="level" style="background-position:0 0"></div>
+				<div class="report" style="background-position:-300% 0"></div>
+				<div class="n">Рэрити</div>
+				<div class="c">Организатор</div>
+				<div class="stat">
+					<div class="progress" style="width:61%"></div>
+					<div class="prof label">61%</div>
+					<div class="city label">Хуффингтон</div>
+				</div>
+			</div>
+			<div class="s">
+				<img class="p" src="res\portraits\5.png">
+				<div class="task" style="background-position:-400% 0"></div>
+				<div class="level" style="background-position:-100% 0"></div>
+				<div class="report" style="background-position:-300% 0"></div>
+				<div class="n">Пинки Пай</div>
+				<div class="c">Политик</div>
+				<div class="stat">
+					<div class="progress" style="width:53%"></div>
+					<div class="prof label">53%</div>
+					<div class="city label">Хуффингтон</div>
+				</div>
+			</div>
+			
+			<div class="s">
+				<img class="p" src="res\portraits\6.png">
+				<div class="task" style="background-position:-500% 0"></div>
+				<div class="level" style="background-position:-300% 0"></div>
+				<div class="report" style="background-position:-300% 0"></div>
+				<div class="n">Флаттершай</div>
+				<div class="c">Оперативник</div>
+				<div class="stat">
+					<div class="progress" style="width:20%"></div>
+					<div class="prof label">20%</div>
+					<div class="city label">Понивилль</div>
+				</div>
+			</div>
+			<div class="s">
+				<img class="p" src="res\portraits\0.png">
+				<div class="task" style="background-position:-600% 0"></div>
+				<div class="level" style="background-position:-500% 0"></div>
+				<div class="report" style="background-position:-300% 0"></div>
+				<div class="n">Generic Anon Pony</div>
+				<div class="c">Универсал</div>
+				<div class="stat">
+					<div class="progress" style="width:14%"></div>
+					<div class="prof label">14%</div>
+					<div class="city label">Ебеня</div>
+				</div>
+			</div>
+			
+		</div>
+		<!--<div class="lr">
+			<div class="b fs ico1"><svg xmlns="http://www.w3.org/2000/svg" height="64" width="64" viewBox="0 0 64 64"><g><path fill="#000" d="M32,12,64,44,0,44z"/></g></svg></div>
+			<div class="b fs ico1"><svg xmlns="http://www.w3.org/2000/svg" height="64" width="64" viewBox="0 0 64 64"><g><path fill="#000" d="M32,52,64,20,0,20z"/></g></svg></div>
+		</div>-->
+	</div>
+	
+	<div id="windows">
+		<div id="popUp" class="pu d">
+			<div class="back" style="z-index:9998"></div>
+			<div class="w m" style="z-index:9999">
+				<div class="cc big" style="text-align:center">
+					<div class="loadbar">
+						<img src="res/lc.png" class="loadpng">
+						<img src="res/lc.png" class="loadpng">
+					</div>
+					<div class='loadtext'>Now loading...</div>
+				</div>
+			</div>
+		</div>
+		
+		<div id="menu">
+			<div class="back" style="z-index:9997"></div>
+			<div class="w vsm" style="z-index:9998">
+				<div class="h">
+					<span>Пауза</span>
+				</div>
+				<div class="cc" style="text-align:center; font-size:120%">
+					<div class="b fs">Продолжить</div>
+					<div class="b fs">Сохранить и выйти</div>
+				</div>
+			</div>
+		</div>
+		
+		<div id="player">
+			<div class="w" style="z-index:9990">
+				<div class="h">
+					<span>&nbsp;</span>
+				</div>
+				<div class="close">X</div>
+				<div class="cc">
+					<div class="line">
+						<div class="link b na" style="color:#ddd;display:inline-block;width:15%">12/71</div>
+						<a class="link b na" style="color:#ddd;text-decoration:none;:inline-block;width:83%;overflow:hidden;white-space:pre" target="_blank">XXXX</a>
+					</div>
+					<div class="table r"><div class="t3"><div class="t2">
+						<div class="t"><span class="b fs r ico1"><svg xmlns="http://www.w3.org/2000/svg" height="64" width="64" viewBox="0 0 64 64"><g><path d="M8,4 8,60h12v-56z"/><path d="M56,2.2E-7,24,32,56,64z"/></g></svg></span></div>
+						<div class="t"><span class="b fs r ico1">
+							<svg style="display:none" xmlns="http://www.w3.org/2000/svg" height="64" width="64" viewBox="0 0 64 64"><g><path d="m40,4,0,56,12,0,0-56z"/><path d="m12,4,0,56,12,0,0-56z"/></g></svg>
+							<svg xmlns="http://www.w3.org/2000/svg" height="64" width="64" viewBox="0 0 64 64"><g><path d="M20,0,52,32,20,64z"/></g></svg>
+						</span></div>
+						<div class="t"><span class="b fs r ico1"><svg xmlns="http://www.w3.org/2000/svg" height="64" width="64" viewBox="0 0 64 64"><g><path d="m44,4,0,56,12,0,0-56z"/><path d="M8,0,40,32,8,64z"/></g></svg></span></div>
+						<div class="t"><span class="b fs r ico1 sel"><svg xmlns="http://www.w3.org/2000/svg" height="64" width="64" viewBox="0 0 64 64"><g><path d="M10.84,5.156l-5.684,5.684,38,38-7.16,7.16h20v-20l-7.16,7.16-38-38zm25.16,2.844l7.16,7.16-8.35,8.34,5.69,5.69,8.34-8.35,7.16,7.16v-20h-20zm-12.5,26.81l-18.34,18.35,5.684,5.68,18.35-18.34-5.69-5.69z"/></g></svg></span></div>
+						<div class="t"><span class="b fs r ico1">O</span></div>
+						
+						<div class="t"><span class="b na fs r ico1" style="color:#ddd">0:00 / 0:00</span></div>
+						
+						<div class="t"><span class="b fs r ico1"><svg xmlns="http://www.w3.org/2000/svg" height="64" width="64" viewBox="0 0 64 64"><g><path d="m12,28,40,0,0,8-40,0z"/></g></svg></span></div>
+						<div class="t" style="width:26%"><span class="b fs r ico1">
+							<svg xmlns="http://www.w3.org/2000/svg" height="64" width="64" viewBox="0 0 64 64"><g><path d="m0,56,64,0,0-9.6z"/></g></svg><svg xmlns="http://www.w3.org/2000/svg" height="64" width="64" viewBox="0 0 64 64"><g><path d="M0,46.4,0,56,64,56,64,36.8z"/></g></svg><svg xmlns="http://www.w3.org/2000/svg" height="64" width="64" viewBox="0 0 64 64"><g><path d="M0,36.8,0,56,64,56,64,27.2z"/></g></svg><svg xmlns="http://www.w3.org/2000/svg" height="64" width="64" viewBox="0 0 64 64"><g><path d="M0,27.2,0,56,64,56,64,17.6z"/></g></svg><svg xmlns="http://www.w3.org/2000/svg" height="64" width="64" viewBox="0 0 64 64"><g><path d="M0,17.6,0,56,64,56,64,8z"/></g></svg></span>
+						</div>
+						<div class="t"><span class="b fs r ico1"><svg xmlns="http://www.w3.org/2000/svg" height="64" width="64" viewBox="0 0 64 64"><g><path d="M28,12v16h-16v8h16v16h8v-16h16v-8h-16v-16h-8z"/></g></svg></span></div>
+					</div></div></div>
+					<div id="ytplayer" style="opacity:0; position:absolute"></div>
+				</div>
+			</div>
+		</div>
+		
+		<div id="equestria">
+			<div class="w tall">
+				<div class="h">
+					<span>Эквестрия</span>
+				</div>
+				<div class="close">X</div>
+				<div class="cc">
+					<div class="table r ux"><div class="t3">
+						<div class="t2">
+							<div class="t"><div class="report" style="background-position:-200% 0"></div></div>
+							<div class="t">Понивиль</div>
+							<div class="t"><div class="home"></div></div>
+						</div>
+						<div class="t2">
+							<div class="t"><div class="report" style="background-position:-200% 0"></div></div>
+							<div class="t">Кантерлот</div>
+							<div class="t"><div class="home"></div></div>
+						</div>
+						<div class="t2">
+							<div class="t"><div class="report" style="background-position:-200% 0"></div></div>
+							<div class="t">Клаудсдейл</div>
+							<div class="t"><div class="home"></div></div>
+						</div>
+						<div class="t2">
+							<div class="t"><div class="report" style="background-position:-200% 0"></div></div>
+							<div class="t">Мейнхеттен</div>
+							<div class="t"><div class="home"></div></div>
+						</div>
+						<div class="t2">
+							<div class="t"><div class="report" style="background-position:-200% 0"></div></div>
+							<div class="t">Филлидельфия</div>
+							<div class="t"><div class="home"></div></div>
+						</div>
+						<div class="t2">
+							<div class="t"><div class="report" style="background-position:-200% 0"></div></div>
+							<div class="t">Хуффингтон</div>
+							<div class="t"><div class="home"></div></div>
+						</div>
+					</div></div>
+				</div>
+			</div>
+		</div>
+		
+		<div id="ministries">
+			<div class="w tall">
+				<div class="h">
+					<span>Министерства</span>
+				</div>
+				<div class="close">X</div>
+				<div class="cc">
+					<div class="p14part">
+						<div class="table r ux"><div class="t3">
+							<div class="t2">
+								<div class="t"><div class="ministry"><div style="background-position:-100% 0"></div></div></div>
+								<div class="t">Департамент Межминистерских Дел</div>
+							</div>
+							<div class="t2">
+								<div class="t"><div class="report" style="background-position:-200% 0"></div></div>
+								<div class="t">Кантерлот</div>
+							</div>
+						</div></div>
+					</div>
+					<div class="p34part">
+						<div>
+							<div class="pad sp_top">
+								<div class="line nm">
+									<div class="d">Департамент Межминистерских Дел</div>
+								</div>
+								<div class="line linebar">
+									<div class="p" style="width:33%"></div>
+									<div class="d">Рейтинг <span class="c">33</span></div>
+								</div>
+								<div class="line linebar">
+									<div class="p" style="width:5%"></div>
+									<div class="d">Лояльность <span class="c">5</span></div>
+								</div>
+								<div class="line linebar">
+									<div class="p" style="width:85%"></div>
+									<div class="d">Доля <span class="c">85</span></div>
+								</div>
+								<div class="line linebar">
+									<div class="p" style="width:10%"></div>
+									<div class="d">Финансы <span class="c">41</span></div>
+								</div>
+							</div>
+							<div class="pad sp_img">
+								<img src="res/ministries/big/0.png">
+							</div>
+							<div class="pad sp_info">
+								Задания при министерствах
+							</div>
+							<div class="pad sp_info">
+								Список специалистов
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+		
+		
+		<div id="specialists">
+			<div class="w tall">
+				<div class="h">
+					<span>Специалисты</span>
+				</div>
+				<div class="close">X</div>
+				<div class="cc btns">
+					<div class="table r"><div class="t3">
+						<div class="t2">
+							<div class="t"><div class="report" style="background-position:-200% 0"></div></div>
+							<div class="t"><div class="level" style="background-position:-200% 0"></div></div>
+							<div class="t">Твайлайт Спаркл</div>
+							<div class="t c">Ученый</div>
+							<div class="t"><div class="info">
+								<div class="gender" style="background-position:-100% 0"></div>
+								<div class="race" style="background-position:-300% 0"></div>
+							</div></div>
+							<div class="t"><div class="ministry"><div style="background-position:-200% 0"></div></div></div>
+							<div class="t"><div class="task" style="background-position:-700% 0"></div></div>
+						</div>
+						<div class="t2">
+							<div class="t"><div class="report" style="background-position:-100% 0"></div></div>
+							<div class="t"><div class="level" style="background-position:-400% 0"></div></div>
+							<div class="t">Эпплджек</div>
+							<div class="t c">Военный</div>
+							<div class="t"><div class="info">
+								<div class="gender" style="background-position:-100% 0"></div>
+								<div class="race" style="background-position:0 0"></div>
+							</div></div>
+							<div class="t"><div class="ministry"><div style="background-position:-600% 0"></div></div></div>
+							<div class="t"><div class="task" style="background-position:-800% 0"></div></div>
+						</div>
+						<div class="t2">
+							<div class="t"><div class="report" style="background-position:0 0"></div></div>
+							<div class="t"><div class="level" style="background-position:-600% 0"></div></div>
+							<div class="t">Рэйнбоу Дэш</div>
+							<div class="t c">Шпион</div>
+							<div class="t"><div class="info">
+								<div class="gender" style="background-position:-100% 0"></div>
+								<div class="race" style="background-position:-200% 0"></div>
+							</div></div>
+							<div class="t"><div class="ministry"><div style="background-position:-500% 0"></div></div></div>
+							<div class="t"><div class="task" style="background-position:-900% 0"></div></div>
+						</div>
+						<div class="t2">
+							<div class="t"><div class="report" style="background-position:-300% 0"></div></div>
+							<div class="t"><div class="level" style="background-position:0 0"></div></div>
+							<div class="t">Рэрити</div>
+							<div class="t c">Организатор</div>
+							<div class="t"><div class="info">
+								<div class="gender" style="background-position:-100% 0"></div>
+								<div class="race" style="background-position:-100% 0"></div>
+							</div></div>
+							<div class="t"><div class="ministry"><div style="background-position:-300% 0"></div></div></div>
+							<div class="t"><div class="task" style="background-position:-300% 0"></div></div>
+						</div>
+						<div class="t2">
+							<div class="t"><div class="report" style="background-position:-300% 0"></div></div>
+							<div class="t"><div class="level" style="background-position:-100% 0"></div></div>
+							<div class="t">Пинки Пай</div>
+							<div class="t c">Политик</div>
+							<div class="t"><div class="info">
+								<div class="gender" style="background-position:-100% 0"></div>
+								<div class="race" style="background-position:0 0"></div>
+							</div></div>
+							<div class="t"><div class="ministry"><div style="background-position:-700% 0"></div></div></div>
+							<div class="t"><div class="task" style="background-position:-400% 0"></div></div>
+						</div>
+						<div class="t2">
+							<div class="t"><div class="report" style="background-position:-300% 0"></div></div>
+							<div class="t"><div class="level" style="background-position:-300% 0"></div></div>
+							<div class="t">Флаттершай</div>
+							<div class="t c">Оперативник</div>
+							<div class="t"><div class="info">
+								<div class="gender" style="background-position:-100% 0"></div>
+								<div class="race" style="background-position:-200% 0"></div>
+							</div></div>
+							<div class="t"><div class="ministry"><div style="background-position:-400% 0"></div></div></div>
+							<div class="t"><div class="task" style="background-position:-500% 0"></div></div>
+						</div>
+						<div class="t2">
+							<div class="t"><div class="report" style="background-position:-300% 0"></div></div>
+							<div class="t"><div class="level" style="background-position:-500% 0"></div></div>
+							<div class="t">Generic Anon Pony</div>
+							<div class="t c">Универсал</div>
+							<div class="t"><div class="info">
+								<div class="gender" style="background-position:0 0"></div>
+								<div class="race" style="background-position:-400% 0"></div>
+							</div></div>
+							<div class="t"><div class="ministry"><div style="background-position:-100% 0"></div></div></div>
+							<div class="t"><div class="task" style="background-position:-600% 0"></div></div>
+						</div>
+					</div></div>
+				</div>
+				<div class="bt"><div class="table r"><div class="t3"><div class="t2">
+					<div class="t"><div class="b fs">По имени</div></div>
+					<div class="t"><div class="b fs">По уровню</div></div>
+					<div class="t"><div class="b fs">По срочности</div></div>
+				</div></div></div></div>
+			</div>
+		</div>
+		
+		<div id="news" class="d">
+			<div class="w tall">
+				<div class="h">
+					<span>Новости</span>
+				</div>
+				<div class="cc">
+					<div>
+						Какая-то новость
+						<div>
+							Содержимое новости
+						</div>
+					</div>
+					<div>
+						Еще одна какая-то новость
+						<div>
+							Произошло что-то интересное
+						</div>
+					</div>
+					<div>
+						Тысячи их
+						<div>
+							Ехал Гитлер через Гитлер
+							<div>
+								Видит Гитлер Гитлер Гитлер
+							</div>
+							Сунул Гитлер руку в Гитлер
+							<div>
+								Гитлер Гитлер Гитлер Гитлер
+							</div>
+						</div>
+					</div>
+					<div>Ааааааа, примеры мне запилите</div>
+				</div>
+			</div>
+		</div>
+		
+		<div id="specinfo">
+			<div class="w tall">
+				<div class="h">
+					<span>Личное дело</span>
+				</div>
+				<div class="close">X</div>
+				<div class="cc">
+					<div>
+						<div class="pad sp_top">
+							<div class="line nm">
+								<div class="d">Твайлайт Спаркл
+									<span class="c">
+										<div class="gender" style="background-position:-100% 0"></div>
+										<div class="race" style="background-position:-300% 0"></div>
+									</span>
+								</div>
+							</div>
+							<div class="line linebar lv">
+								<div class="p" style="width:33%"></div>
+								<div class="d">Уровень <span class="c">3</span></div>
+							</div>
+							<div class="line sp">Ученый</div>
+							<div class="line linebar st_str">
+								<div class="p" style="width:5%"></div>
+								<div class="d">Выносливость <span class="c">15</span></div>
+							</div>
+							<div class="line linebar st_int">
+								<div class="p" style="width:85%"></div>
+								<div class="d">Интеллект <span class="c">348</span></div>
+							</div>
+							<div class="line linebar st_chr">
+								<div class="p" style="width:10%"></div>
+								<div class="d">Харизма <span class="c">41</span></div>
+							</div>
+						</div>
+						<div class="pad sp_img">
+							<img src="res\portraits\1.png">
+							<div class="ministry" style="background-position:-200% 0"></div>
+						</div>
+						<div class="pad sp_info">
+							<div class="pad sp_half">
+								<div class="line linebar st_loy">
+									<div class="p" style="width:98%"></div>
+									<div class="d">Лояльность <span class="c">98</span></div>
+								</div>
+								<div class="line linebar st_pyo">
+									<div class="p" style="width:60%"></div>
+									<div class="d">Уровень оплаты <span class="c">8950</span></div>
+								</div>
+								<div class="line linebar st_stf">
+									<div class="p" style="width:50%"></div>
+									<div class="d">Удовлетворенность <span class="c">50</span></div>
+								</div>
+							</div>
+							<div class="pad sp_half">
+								<div class="line linebar st_inv">
+									<div class="p" style="width:100%"></div>
+									<div class="d">Вовлеченность <span class="c">100</span></div>
+								</div>
+								<div class="line linebar st_hth">
+									<div class="p" style="width:100%"></div>
+									<div class="d">Здоровье <span class="c">130</span></div>
+								</div>
+								<div class="line linebar st_opn">
+									<div class="p" style="width:90%"></div>
+									<div class="d">Открытость <span class="c">90</span></div>
+								</div>
+							</div>
+						</div>
+						<div class="pad sp_info">
+							
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+		
+		<div id="settings">
+			<div class="w tall">
+				<div class="h">
+					<span>Настройки</span>
+				</div>
+				<div class="close" onclick="api.closeWindow('settings')">X</div>
+				<div class="cc btns" style="text-align:center">
+
+				</div>
+				<div class="bt">
+				
+				</div>
+			</div>
+		</div>
+	</div>
+</body>
+</html>

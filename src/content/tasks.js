@@ -1,4 +1,11 @@
 'use strict',
+content.works.w_sys_relaxing = {
+	iconUrl:'res/icons/tasks.png',
+	iconOffset:0,
+	taskId:'w_sys_relaxing',
+	name:'Отдых'
+};
+
 content.works.w_studying = {
 	iconUrl:'res/icons/tasks.png',
 	iconOffset:2,
@@ -22,6 +29,7 @@ content.works.w_studying = {
 		world.specs[this.workers[0]].stats.experience+=5;
 		this.value++;
 	},
+	whenStopped:function() {return 0;},
 	whenFailed:function() {return 0}
 };
 
@@ -35,13 +43,13 @@ content.works.w_intStudying = {
 	updateInterval:utils.time2ms({date:3}),
 	
 	calcCost:function(spec, ministry, location) {
-		return {money:parseInt(1000*(50-world.ministries.MAS.stats.part)*(1.33-utils.getIntellect(spec))(};
+		return {money:parseInt(1000*(50-world.ministries.MAS.stats.part)*(1.33-utils.getIntellect(spec)))};
 	},
 	requiments:function(spec) {
 		if (utils.getLevel(spec) < 2) return -1;
 		let c = (utils.getIntellect(spec)<.25?
 		utils.getIntellect(spec)*4:
-		1-utils.getIntellect(spec)*4/3;
+		1-(utils.getIntellect(spec)-0.1)*4/3);
 		if (utils.getLevel(spec) <= 4) return parseInt(33.333*(utils.getLevel(spec)-1)*c);
 		return parseInt(33.333*(8-utils.getLevel(spec))*c);
 	},
@@ -49,6 +57,7 @@ content.works.w_intStudying = {
 	whenComplete:function() {
 		world.specs[this.workers[0]].stats.experience+=1000*utils.getIntellect(world.specs[this.workers[0]]);
 	},
+	whenStopped:function() {return 0;},
 	update:function() {
 		let spec = world.specs[this.workers[0]];
 		spec.stats.experience+=10;
@@ -66,5 +75,8 @@ content.works.w_intStudying = {
 };
 
 function m_init() {
+	content.worklists.perSpec.push(content.works.w_studying);
+	content.worklists.perSpec.push(content.works.w_intStudying);
+	
 	return 0;
 }

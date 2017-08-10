@@ -25,6 +25,7 @@ content.extendedPerksGenerators = [];
 content.idlePerksGenerators = [];
 content.worldCreators = [];
 content.gameCreators = [];
+content.gameLaunchers = [];
 
 var game = {};
 game.UI = {};

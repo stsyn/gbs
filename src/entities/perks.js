@@ -1,5 +1,4 @@
 "use strict";
-/*
 class perk {
 	constructor() {
 		this.id = null;
@@ -41,5 +40,4 @@ class perkRerolls {
 		this.dividers = [];
 	}
 }
-*/
 function m_init() {return 0}

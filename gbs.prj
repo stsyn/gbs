@@ -25,8 +25,13 @@
             <File name="src\zero.js" />
             <File name="src\game.js" />
             <File name="src\player.js" />
+            <File name="src\inital.js" />
+            <Folder name="mods">
+                <File name="src\mods\fucken_sick.js" />
+            </Folder>
         </Folder>
         <File name="index.html" />
         <File name="style.css" />
+        <File name="game.html" />
     </Project>
 </NotepadPlus>

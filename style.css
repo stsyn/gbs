@@ -8,6 +8,7 @@
 }
 a {color:#000}
 .d {cursor:default}
+.b .d {cursor:pointer}
 label {cursor:pointer}
 html {
 	height:100%;
@@ -36,7 +37,7 @@ body {
 	}
 }
 
-#top, #bottom, .b {background-image: linear-gradient(to top, rgba(0,0,0,.7), rgba(128,128,128,.7), rgba(64,64,64,.7),rgba(0,0,0,.7));}
+#top, #bottom, .b, .pad .linebar.b {background-image: linear-gradient(to top, rgba(0,0,0,.7), rgba(128,128,128,.7), rgba(64,64,64,.7),rgba(0,0,0,.7));}
 .b:not(.na):not(.sel):hover {background-image: linear-gradient(to top, rgba(64,64,0,.7), rgba(128,128,64,.7), rgba(96,96,64,.7),rgba(64,64,0,.7));}
 .b:not(.na):not(.sel):active {
 	background-image: linear-gradient(to top, rgba(0,64,0,.7), rgba(64,128,64,.7), rgba(32,96,32,.7),rgba(0,64,0,.7));
@@ -59,6 +60,10 @@ body {
 	font-size:95%;
 	line-height:100%}
 .b.ico1 {line-height:160%}
+.pad .linebar.b {
+	padding: 0 0.5em;
+	font-size:100%;
+}
 
 #top {
 	color:#ccc;
@@ -451,12 +456,14 @@ input:checked + label, input:checked + label .b{background:#cfc !important}
 	width:1.8em}
 #windows .close:hover {background: #600;}
 
-	
+.big {
+	font-size:133%
+}
 .loadtext {
 	position:absolute;
 	bottom:0%;
 	text-align:left;
-	font-size:200%;
+	font-size:150%;
 	width:calc(100% - 1em);
 }
 .loadbar {
@@ -540,17 +547,15 @@ input:checked + label, input:checked + label .b{background:#cfc !important}
 	color:#dd9;
 	font-weight:700;
 }
-.ux .task, .ux .ministry, .ux .info, .ux .level, .ux .report{
+.ux .task, .pad .linebar .task, .ux .ministry, .ux .info, .ux .level, .ux .report{
 	font-size:115%;
 	display:inline-block;
 	width:0.998em;
 	vertical-align:-10%;
 	height:1em;
-	background-size:cover;
+	background-size:cover !important;
 }
-.ux .task{
-	background-image:url('res/icons/tasks.png');
-}
+.pad .linebar .task {margin-right:0.5em}
 .ux .level{
 	width:1.509em;
 	background-image:url('res/icons/level.png');
@@ -565,7 +570,6 @@ input:checked + label, input:checked + label .b{background:#cfc !important}
 	z-index:0;
 	margin-top:-.5em;
 	margin-left:-.5em;
-	background-image:url('res/icons/ministries.png');
 	background-size:cover;
 }
 #windows #ministries .p14part {
@@ -697,6 +701,7 @@ input:checked + label, input:checked + label .b{background:#cfc !important}
 	z-index:1;
 	position:absolute;
 	right:0;
+	top:0;
 	font-weight:600;
 }
 #windows #specinfo .sp {

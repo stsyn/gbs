@@ -23,7 +23,8 @@ class workPattern {
 		
 		this.target = 0;										//цель в количестве			
 		this.maxWorkers = 0;									
-		this.updateInterval = 0;								
+		this.updateInterval = 0;
+		this.stopable = true;								
 		
 		this.calcCost = function(spec, ministry, location) {return {};};	//стоимость в любых применимых попугаях
 		this.requiments = function(spec) {return 0;};			//проверяет пригодность специалиста. 1~100 выдаст в процентах эффективность, отрицательное и 0 - негоден
@@ -31,5 +32,6 @@ class workPattern {
 		this.whenComplete = function() {return 0;};
 		this.update = function() {return 0;};
 		this.whenFailed = function() {return 0;};
+		this.whenStopped = function() {return 0;};
 	}
 }

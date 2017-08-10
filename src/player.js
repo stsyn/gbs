@@ -13,7 +13,8 @@ function onYouTubeIframeAPIReady() {
         width: '1',
 		playerVars: {
 			listType: 'playlist',
-			list: 'PLdlZZmhB8NZKBTAHgh7YkHjVvwKJJEdsH',
+			//list: 'PLdlZZmhB8NZKBTAHgh7YkHjVvwKJJEdsH',
+			list: 'PLBLUz3xoZ6bkr3UC0lFa0GC-ZQBY5deCG',
 			loop: 1
 		},
         events: {
@@ -35,7 +36,7 @@ function onPlayerReady(event) {
 	let i, cc = document.querySelector('#player .cc .table').getElementsByClassName('t2')[0].getElementsByClassName('t')[7];
 	for (i=0; i<(6-plapi.volume); i++) cc.getElementsByTagName('svg')[i].style.opacity = '1';
 	for (i; i<5; i++) cc.getElementsByTagName('svg')[i].style.opacity = '0';
-	for (i=0; i<plapi.mods.length; i++) plapi.mods();
+	for (i=0; i<plapi.mods.length; i++) plapi.mods[i]();
 	playerTrackName();
 	playerOrder();
 	//player.nextVideo();

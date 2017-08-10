@@ -87,6 +87,7 @@ class spec {
 			this.stats.portrait.maneHSV.s = this.stats.portrait.bodyHSV.s + parseInt(Math.random()*Math.random() * (100 - this.stats.portrait.bodyHSV.s));
 			this.stats.portrait.maneHSV.v = this.stats.portrait.bodyHSV.v + parseInt(Math.random()*Math.random() * (100 - this.stats.portrait.bodyHSV.v));
 		}
+		
 		if (this.stats.intellect+this.stats.endurance+this.stats.charisma != 300) utils.generateStats(this);
 		if (this.stats.level == -1) this.stats.level = parseInt(Math.random()*Math.random()*Math.random()*3);
 		
@@ -96,8 +97,6 @@ class spec {
 			this.perks = [];
 			for (let i=0; i<spec.perks.length; i++) utils.addPerk(this, spec.perks[i]);
 		}
-		
-		//TODO: automatic satisfaction and loyalty recalculating
 	
 		if (this.attributes.payout == undefined) utils.calcPayout(this);
 		this.attributes.currentPayout = this.attributes.payout;

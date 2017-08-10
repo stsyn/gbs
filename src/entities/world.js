@@ -8,7 +8,6 @@ function world_proto() {
 var world = new world_proto();
 content.worldCreators.push(function(w) {
 	w.time = 0;
-	w.currentSpeed = 2;
 	document.querySelectorAll('#top .ico1')[1].classList.add('sel');
 	for (let i=0; i<consts.ministries.length; i++) w.ministries[consts.ministries[i]] = new ministry();
 	w.specs.push(new spec(content.presetedSpecs.TS));
@@ -75,8 +74,5 @@ content.worldCreators.push(function(w) {
 		tarr.splice(id, 1);
 		currentMinistry = ++currentMinistry%6;
 	}
-	game.UI.currentSpec = w.specs[0];
-	
-	
 });
 function m_init() {return 0}

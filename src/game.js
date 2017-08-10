@@ -1,8 +1,15 @@
 "use strict";
+content.gameLaunchers.push(function() {
+	game.UI.currentSpec = world.specs[0];
+	utils.changeSpeed(3);
+	setTimeout(function() {utils.changeSpeed(1)}, 3000);
+});
+
 content.gameCreators.push(function() {
 	utils.preparePerks();
+	game.UI.popups = [];
 	game.UI.bottomOffset = 0;
-	game.UI.selectedMinistry = 'MAS';
+	game.UI.selectedMinistry = 'OIA';
 	game.UI.bottomSize = 10;
 	game.UI.generateSpecLine = function (spec) {
 		return Inferno.createElement('div', {className:'t2'+(game.UI.currentSpec == spec?' sel':''), onClick:function() {
@@ -24,12 +31,12 @@ content.gameCreators.push(function() {
 				)
 			),
 			Inferno.createElement('div', {className:'t'}, 
-				Inferno.createElement('div', {className:'ministry',style:'background:url("'+(spec.ministry!=null?world.ministries[spec.ministry].info.iconUrl:'')+'")'}, 
-					Inferno.createElement('div', {style:'background-position:'+(spec.ministry!=null?-100*world.ministries[spec.ministry].info.iconOffset:0)+'%;'}, null)
+				Inferno.createElement('div', {className:'ministry'}, 
+					Inferno.createElement('div', {style:'background-position:'+(spec.ministry!=null?-100*world.ministries[spec.ministry].info.iconOffset:0)+'%;background-image:url("'+(spec.ministry!=null?world.ministries[spec.ministry].info.iconUrl:'')+'")'}, null)
 				) 
 			),
 			Inferno.createElement('div', {className:'t'}, 
-				Inferno.createElement('div', {className:'task'}, null)
+				Inferno.createElement('div', {className:'task', style:'background-image:url('+content.works[utils.getCurrentWork(spec).taskId].iconUrl+');background-position: '+(-content.works[utils.getCurrentWork(spec).taskId].iconOffset*100)+'% 0'}, ' ')
 			)
 		)
 	};
@@ -99,8 +106,8 @@ content.gameCycles.main = function() {
 				game.UI.selectedMinistry = m.id;
 			}},
 			Inferno.createElement('div', {className:'t'}, 
-				Inferno.createElement('div', {className:'ministry',style:'background:url("'+m.info.iconUrl+'")'}, 
-					Inferno.createElement('div', {style:'background-position:'+(-100*m.info.iconOffset)+'%;'}, null)
+				Inferno.createElement('div', {className:'ministry'}, 
+					Inferno.createElement('div', {style:'background-position:'+(-100*m.info.iconOffset)+'%;background-image:url("'+m.info.iconUrl+'")'}, null)
 				) 
 			),
 			Inferno.createElement('div', {className:'t'}, m.info.name)
@@ -188,11 +195,50 @@ content.gameCycles.main = function() {
 	game.UI.specPerks = [];
 	for (let i=0; i<l_spec.perks.length; i++) {
 		if (!l_spec.isPerkExplored[i]) continue;
-		game.UI.specPerks.push(Inferno.createElement('div', {className:'line linebar lv dd'}, 
+		game.UI.specPerks.push(Inferno.createElement('div', {className:'line linebar dd'}, 
 			Inferno.createElement('div', {className:'d'}, content.perks.c[l_spec.perks[i]].name),
 			Inferno.createElement('div', {className:'e'}, content.perks.c[l_spec.perks[i]].description)
 		));
 	}
+	
+	game.UI.hasWorks = false;
+	game.UI.specWorks = content.worklists.perSpec.map(function(work) {
+		if (work.requiments(l_spec) > 0) {
+			game.UI.hasWorks = true;
+			return Inferno.createElement('div', {className:'line linebar dd b', onClick:function() {utils.callPopup({
+				id:'work_'+game.UI.currentSpec.stats.experience,
+				text:'Назначить специалиста на задание? Потребуется <...>',
+				buttons:[{
+					text: 'Отмена',
+					callback: 'close'
+				}]
+			})}}, 
+				Inferno.createElement('div', {className:'p',style:'width:'+work.requiments(l_spec)+'%'}, null),
+				Inferno.createElement('div', {className:'d'}, 
+					Inferno.createElement('div', {className:'task', style:'background-image:url('+work.iconUrl+');background-position: '+(-work.iconOffset*100)+'% 0'}, ' '),
+					work.name,
+					Inferno.createElement('div', {className:'c'}, work.requiments(l_spec)+'%')
+				),
+				Inferno.createElement('div', {className:'e'},work.description)
+			)
+		}
+		
+	});
+	
+	game.UI.currentWorks = l_spec.tasks.map(function(workId) {
+		let task = world.tasks[workId];
+		let work = content.works[task.taskId];
+		return Inferno.createElement('div', {className:'line linebar dd b'}, 
+			Inferno.createElement('div', {className:'p',style:'width:'+100*task.value/task.target+'%'}, null),
+			Inferno.createElement('div', {className:'d'}, 
+				Inferno.createElement('div', {className:'task', style:'background-image:url('+work.iconUrl+');background-position: '+(-work.iconOffset*100)+'% 0'}, ' '),
+				work.name,
+				Inferno.createElement('div', {className:'c'}, parseInt(100*task.value/task.target)+'%')
+			),
+			Inferno.createElement('div', {className:'e'},work.description)
+		)
+	});
+	if (l_spec.tasks.length == 0) game.UI.currentWorks = Inferno.createElement('span', {}, strings.UI.idle);
 	
 	l_min = 0;
 	let l_notice = strings.UI.notices.allOkay;
@@ -305,7 +351,9 @@ content.gameCycles.main = function() {
 					Inferno.createElement('div', {className:'pad sp_half'},
 						l_notice
 					)
-				)
+				),
+				Inferno.createElement('div', {className:'pad sp_info'}, game.UI.currentWorks),
+				Inferno.createElement('div', {className:'pad sp_info'}, (game.UI.hasWorks?game.UI.specWorks:strings.UI.noWork))
 			);
 	}
 	Inferno.render(game.UI.specProfile, document.getElementById("specinfo").getElementsByClassName('cc')[0]);
@@ -366,6 +414,7 @@ function m_init() {
 		if (!document.querySelectorAll('#top .menukey')[3].classList.contains('sel')) {
 			document.querySelectorAll('#top .menukey')[3].classList.add('sel');
 			document.getElementById('ministries').classList.add('d');
+			game.UI.selectedMinistry = 'OIA';
 			document.querySelectorAll('#top .menukey')[2].classList.remove('sel');
 			document.getElementById('equestria').classList.remove('d');
 			document.querySelectorAll('#top .menukey')[1].classList.remove('sel');
@@ -391,6 +440,10 @@ function m_init() {
 		utils.changeSpeed(game.UI.tspeed);
 		document.getElementById('menu').classList.remove('d');
 	});
+	document.querySelectorAll('#menu .b.fs')[1].addEventListener('click', function() {
+		utils.saveAndQuit();
+	});
+	
 	document.querySelector('#player .close').addEventListener('click', function() {
 		document.querySelectorAll('#top .menukey')[4].classList.remove('sel');
 		document.getElementById('player').classList.remove('d');
@@ -410,4 +463,5 @@ function m_init() {
 	document.querySelector('#specinfo .close').addEventListener('click', function() {
 		document.getElementById('specinfo').classList.remove('d');
 	});
+	
 }

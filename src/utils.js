@@ -16,6 +16,46 @@ function consts_proto() {
 };
 var consts = new consts_proto();
 var utils = {
+	saveWorld(silent) {
+		try {
+			localStorage._gbs_world = JSON.stringify(world);
+			return 0;
+		}
+		catch (ex) {
+			if (!silent) utils.callPopup({text:'Cannot save world.<br>'+ex, id:'save_error', buttons:[{
+				text:'OK',
+				callback: 'close'
+			}]});
+			console.log('Cannot save world. \n'+ex);
+			return 1;
+		}
+	},
+	
+	saveWorld2Url() {
+		return 'game.html?'+encodeURI(JSON.stringify(world));
+	},
+	
+	saveAndQuit() {
+		if (world.config.urlHack) {
+			utils.callPopup({
+				text:'Ввиду отсутствия доступа к локальному хранилищу, данные сохранены в ссылке. Скопируйте из нее адрес (обычно ПКМ -> Скопировать адрес) и сохраните в любом удобном для вас месте. Запустите игру, вставив тот адрес.',
+				id:'manualSaving',
+				buttons:[{
+					text:'Скопируйте адрес здесь',
+					callback:function() {},
+					href:utils.saveWorld2Url()
+				},{
+					text:'Выйти',
+					callback:function() {history.back()} 
+				}
+				]
+			});
+		}
+		else {
+			if (!saveWorld(false)) history.back();
+		}
+	},
+	
 	getTime() {
 		let t = '';
 		let d = new Date(parseInt(world.time * 120000));
@@ -68,19 +108,6 @@ var utils = {
 	getEndurance(spec) {return spec.stats.endurance/utils.statsSum(spec)},
 	
 	getClass(spec) {
-		if (utils.getCharisma(spec) > 0.66) return 0;
-		if (utils.getIntellect(spec) > 0.66) return 1;
-		if (utils.getEndurance(spec) > 0.66) return 2;
-		if ((utils.getIntellect(spec)+utils.getEndurance(spec) > 0.90) || (utils.getCharisma(spec)+utils.getEndurance(spec) > 0.90) || (utils.getCharisma(spec)+utils.getIntellect(spec) > 0.90)) {
-			let mx = (utils.getIntellect(spec)+utils.getEndurance(spec)), id=0;
-			if (utils.getCharisma(spec)+utils.getEndurance(spec) > mx) {
-				id = 1;
-				mx = utils.getCharisma(spec)+utils.getEndurance(spec);
-			}
-			if (utils.getCharisma(spec)+utils.getIntellect(spec) > mx) return 5;
-			if (id == 1) return 4;
-			return 3;
-		}
 		if (utils.getCharisma(spec) > 0.55) return 0;
 		if (utils.getIntellect(spec) > 0.55) return 1;
 		if (utils.getEndurance(spec) > 0.55) return 2;
@@ -222,6 +249,54 @@ var utils = {
 		}
 	},
 	
+	getCurrentWork(spec) {
+		if (spec.tasks.length == 0) return content.works.w_sys_relaxing;
+		else return world.tasks[spec.tasks[0]];
+	},
+	
+	closePopup(popup) {
+		game.UI.popups.pop();
+		if (game.UI.popups.length == 0) utils.changeSpeed(game.UI.tspeed);
+		let e = document.getElementById("popup_"+popup.id);
+		e.parentNode.removeChild(e);
+	},
+	
+	callPopup(popup) {
+		if (game.UI.popups.length == 0) {
+			game.UI.tspeed = document.querySelectorAll('#top .ico1').length-world.currentSpeed-1;
+			utils.changeSpeed(3);
+		}
+		popup.num = game.UI.popups.length;
+		game.UI.popups.push(popup.id);
+		let b;
+		if (popup.buttons!=undefined && popup.buttons.length > 0) {
+			b = popup.buttons.map(function (b) {
+				let x = b.callback;
+				if (x == 'close') x = function() { utils.closePopup(popup)};
+				let hasUrl = (b.href != undefined);
+				return Inferno.createElement((hasUrl?'a':'div'), {className:'b fs', onClick:x, href:b.href, target:'_blank'}, b.text)
+			});
+		}
+		let z = document.createElement('div');
+		z.id = 'popup_'+popup.id;
+		z.className = 'pu d';
+		document.getElementById('windows').appendChild(z);
+		let z1 = document.createElement('div');
+		z1.className = 'back';
+		z1.style = 'z-index:9998';
+		z.appendChild(z1);
+		z1 = document.createElement('div');
+		z1.className = 'w m';
+		z1.style = 'z-index:9999';
+		z.appendChild(z1);
+		Inferno.render(
+			Inferno.createElement('div', {className:'cc big', style:'text-align:center'}, 
+				Inferno.createElement('div', {className:'pad bl'},popup.text),
+				b
+			)
+		, z1);
+	},
+	
 	generatePerks(spec) {
 		spec.perks = [];
 		let i = parseInt(Math.random()*content.perks.perkVarPool.length);
@@ -261,21 +336,6 @@ var utils = {
 		spec.attributes.payout = parseInt(
 		100 * Math.pow(const1,1/(const2-v)) * (1+this.getLevel(spec)/6+Math.pow(spec.attributes.involvement, 1.5)/150));
 	},
-	
-	/*generateSpecialist(spec, reqSpecie = parseInt(Math.random()*consts.species.length), preDefined = {}) {
-		for (key in preDefined) {
-			spec[key] = preDefined[key];
-		}
-		spec.stats.specie = reqSpecie;
-		utils.generateStats(spec);
-		spec.stats.level = parseInt(Math.random()*Math.random()*3);
-		utils.calcPayout(spec);
-		let t = utils[consts.speciesNameGenerFunction[reqSpecie]](spec);
-		spec.stats.name = t.n;
-		spec.stats.gender = t.g;
-		if (spec.stats.gender == 0) spec.stats.gender = parseInt(Math.random()*2+1);
-		spec.stats.portraitURL = 'res\\portraits\\new\\0.png';	//ToDo: more universal system
-	},*/
 	
 	generateMaxHealth(spec) {
 		return parseInt(10+Math.sqrt(utils.getActualEndurance(spec))*spec.shadow.maxHealthMult/3);
