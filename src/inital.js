@@ -28,6 +28,7 @@ window.onload = function() {
 		x.lang = langList[currentLang];
 		try {
 			localStorage._gbs_launchdate = JSON.stringify(x);
+			document.getElementById('launch').click();
 		}
 		catch(ex) {
 			alert('Сохранение параметров запуска невозможно! Для продолжения игры сохраните ссылку, выданную при сохранении внутри игры!');
