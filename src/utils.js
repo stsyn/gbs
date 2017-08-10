@@ -25,6 +25,9 @@ var utils = {
 			if (!silent) utils.callPopup({text:'Cannot save world.<br>'+ex, id:'save_error', buttons:[{
 				text:'OK',
 				callback: 'close'
+			},{
+				text:'Save to URL',
+				callback: utils.saveWorld2Url
 			}]});
 			console.log('Cannot save world. \n'+ex);
 			return 1;
@@ -32,27 +35,27 @@ var utils = {
 	},
 	
 	saveWorld2Url() {
-		return 'game.html?'+encodeURI(JSON.stringify(world));
+		utils.callPopup({
+			text:'Ввиду отсутствия доступа к локальному хранилищу, данные сохранены в ссылке. Скопируйте из нее адрес (обычно ПКМ -> Скопировать адрес) и сохраните в любом удобном для вас месте. Запустите игру, вставив тот адрес.',
+			id:'manualSaving',
+			buttons:[{
+				text:'Скопируйте адрес здесь',
+				callback:function() {},
+				href:'game.html?'+encodeURI(JSON.stringify(world))
+			},{
+				text:'Выйти',
+				callback:function() {history.back()} 
+			}
+			]
+		});
 	},
 	
 	saveAndQuit() {
 		if (world.config.urlHack) {
-			utils.callPopup({
-				text:'Ввиду отсутствия доступа к локальному хранилищу, данные сохранены в ссылке. Скопируйте из нее адрес (обычно ПКМ -> Скопировать адрес) и сохраните в любом удобном для вас месте. Запустите игру, вставив тот адрес.',
-				id:'manualSaving',
-				buttons:[{
-					text:'Скопируйте адрес здесь',
-					callback:function() {},
-					href:utils.saveWorld2Url()
-				},{
-					text:'Выйти',
-					callback:function() {history.back()} 
-				}
-				]
-			});
+			utils.saveWorld2Url();
 		}
 		else {
-			if (!saveWorld(false)) history.back();
+			if (!utils.saveWorld(false)) history.back();
 		}
 	},
 	
