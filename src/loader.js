@@ -151,7 +151,7 @@ function finish_init(loaders, c) {
 			console.log(world);
 		}
 		else {
-			JSON.parse(localStorage._gbs_world);
+			world = JSON.parse(localStorage._gbs_world);
 		}
 	}
 	document.querySelector('#popUp .loadtext').innerHTML = 'Postlaunching...';
