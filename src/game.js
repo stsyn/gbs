@@ -11,13 +11,22 @@ content.gameCreators.push(function() {
 	game.UI.bottomOffset = 0;
 	game.UI.selectedMinistry = 'OIA';
 	game.UI.bottomSize = 10;
+	
+	game.UI.tryReadMessages = function (spec) {
+		if (spec != game.UI.currentSpec) return;
+		spec.messages.forEach(function (m,i,a){utils.getMessage(m).read = true});
+		spec.notifyLevel = -1;
+	};
+	
 	game.UI.generateSpecLine = function (spec) {
 		return Inferno.createElement('div', {className:'t2'+(game.UI.currentSpec == spec?' sel':''), onClick:function() {
 				game.UI.currentSpec = spec;
+				spec.messages.forEach(function (m,i,a){utils.getMessage(m).read = true});
+				spec.notifyLevel = -1;
 				document.getElementById('specinfo').classList.add('d');
 			}},
 			Inferno.createElement('div', {className:'t'}, 
-				Inferno.createElement('div', {className:'report'}, null)
+				Inferno.createElement('div', {className:'report', style:'background-position: '+(-100*(spec.notifyLevel+1))+'% 0'}, null)
 			),
 			Inferno.createElement('div', {className:'t'}, 
 				Inferno.createElement('div', {className:'level', style:'background-position:'+(spec.stats.level*(-100))+'% 0'}, null)
@@ -36,7 +45,7 @@ content.gameCreators.push(function() {
 				) 
 			),
 			Inferno.createElement('div', {className:'t'}, 
-				Inferno.createElement('div', {className:'task', style:'background-image:url('+content.works[utils.getCurrentWork(spec).taskId].iconUrl+');background-position: '+(-content.works[utils.getCurrentWork(spec).taskId].iconOffset*100)+'% 0'}, ' ')
+				Inferno.createElement('div', {className:'task', style:'background-image:url('+content.works[utils.getCurrentWork(spec).id].iconUrl+');background-position: '+(-content.works[utils.getCurrentWork(spec).id].iconOffset*100)+'% 0'}, ' ')
 			)
 		)
 	};
@@ -48,20 +57,24 @@ content.gameCycles.main = function() {
 	if (game.UI.bottomOffset<0) game.UI.bottomOffset = 0;
 	if (parseInt(game.UI.bottomOffset/game.UI.bottomSize)>parseInt((game.UI.currentBottomList.length-1)/game.UI.bottomSize)) game.UI.bottomOffset = parseInt((game.UI.currentBottomList.length-1)/game.UI.bottomSize)*game.UI.bottomSize;
 	playerStateUpdate();
-	document.querySelector('#top .c').innerHTML = utils.getTime();
+	document.querySelector('#top .c').innerHTML = utils.getTime(world.time);
 	world.time += (consts.gameSpeed[world.currentSpeed])/consts.fps;
 
 	for (let i=0; i<world.specs.length; i++) {
 		world.specs[i].counters.main -= (consts.gameSpeed[world.currentSpeed])*world.specs[i].counters.updateMult/consts.fps;
-		if (world.specs[i].counters.main <= 0) utils.specTick(world.specs[i]);
-	}
-	
-	for (let i=0; i<world.tasks.length; i++) {
-		if (world.tasks[i].timeBeforeUpdate != null) {
-			world.tasks[i].timeBeforeUpdate -= (consts.gameSpeed[world.currentSpeed])/consts.fps;
-			//if (world.tasks[i].timeBeforeUpdate <= 0) utils.taskTick(world.tasks[i]);
+		if (world.specs[i].counters.main <= 0) {
+			utils.specTick(world.specs[i]);
+			for (let j=0; j<world.ministries[world.specs[i].ministry].specTicks.length; j++)
+				world.ministries[world.specs[i].ministry].specTicks[j](world.specs[i]);
 		}
 	}
+	
+	world.tasks.forEach(function (item, i, arr) {
+		if (item.timeBeforeUpdate != null) {
+			item.timeBeforeUpdate -= (consts.gameSpeed[world.currentSpeed])/consts.fps;
+			if (item.timeBeforeUpdate <= 0) utils.workTick(item);
+		}
+	});
 	
 	//////////////////////////////////////////////////////
 	
@@ -73,20 +86,48 @@ content.gameCycles.main = function() {
 	game.UI.bottomList = game.UI.currentBottomList.map(function (spec) {
 		return Inferno.createElement('div', {className:'s'},
 			Inferno.createElement('img', {className:'p', src:spec.stats.portrait.url}, null),
-			Inferno.createElement('div', {className:'task'}, null),
+			Inferno.createElement('div', {className:'task', style:'background-image:url('+content.works[utils.getCurrentWork(spec).id].iconUrl+');background-position: '+(-content.works[utils.getCurrentWork(spec).id].iconOffset*100)+'% 0'}, ' '),
 			Inferno.createElement('div', {className:'level', style:'background-position:'+(spec.stats.level*(-100))+'% 0'}, null),
-			Inferno.createElement('div', {className:'report'}, null),
+			Inferno.createElement('div', {className:'report', style:'background-position: '+(-100*(spec.notifyLevel+1))+'% 0'}, null),
 			Inferno.createElement('div', {className:'n'}, spec.stats.name),
 			Inferno.createElement('div', {className:'c'}, utils.getClassName(spec)),
 			Inferno.createElement('div', {className:'stat'}, 
 				Inferno.createElement('div', {className:'progress', style:'width:'+100*spec.attributes.health/spec.attributes.maxHealth+'%'}, null),
-				Inferno.createElement('div', {className:'prof label'}, spec.attributes.health+'/'+spec.attributes.maxHealth),
-				Inferno.createElement('div', {className:'city label'}, spec.location)
+				Inferno.createElement('div', {className:'prof label'}, spec.attributes.health+'/'+spec.attributes.maxHealth)
 			)
 		)
 	});
 	game.UI.bottomContainer = Inferno.createElement('div', {className:'container'}, game.UI.bottomList);
 	Inferno.render(game.UI.bottomContainer, document.getElementById("bottom"));
+	
+	//////////////////////////////////////////////////////
+	//					Окно уведомлений		
+	//////////////////////////////////////////////////////
+	
+	game.UI.notifiesTempList = [];
+	let i = world.lastMessageId % consts.maxNotifies, j;
+	if (world.lastMessageId >= consts.maxNotifies) for (j=i; j<consts.maxNotifies; j++) game.UI.notifiesTempList.unshift(world.messages[j])
+	for (j=0; j<i; j++) game.UI.notifiesTempList.unshift(world.messages[j])
+	game.UI.notifiesList = game.UI.notifiesTempList.map(function (m) {
+		let s = '';
+		m.containerId.forEach(function (m, i, a) {
+			s+=world.specs[m].stats.name;
+		});
+		return Inferno.createElement('div', {className:'t2'},
+			Inferno.createElement('div', {className:'t'}, 
+				Inferno.createElement('div', {className:'report', style:'background-position: '+(-100*(m.level+1))+'% 0'}, null)
+			),
+			Inferno.createElement('div', {className:'t'}, 
+				Inferno.createElement('span', {className:'c'}, utils.getTime(m.date)),
+				Inferno.createElement('span', {className:'c'}, s),
+				m.text
+			)
+		)
+	});
+	game.UI.notesContainer = Inferno.createElement('div', {className:'table r ux'}, 
+		Inferno.createElement('div', {className:'t3'}, game.UI.notifiesList)
+	);
+	Inferno.render(game.UI.notesContainer, document.getElementById("news").getElementsByClassName('cc')[0]);
 	
 	//////////////////////////////////////////////////////
 	//					Окно специалистов		
@@ -201,18 +242,51 @@ content.gameCycles.main = function() {
 		));
 	}
 	
+	game.UI.specNotes = l_spec.messages.map(function (u) {
+		let m = utils.getMessage(u);
+		return Inferno.createElement('div', {className:'t2'+(m.read?'':' red')},
+			Inferno.createElement('div', {className:'t'}, 
+				Inferno.createElement('div', {className:'report', style:'background-position: '+(-100*(m.level+1))+'% 0'}, null)
+			),
+			Inferno.createElement('div', {className:'t'}, 
+				Inferno.createElement('span', {className:'c'}, utils.getTime(m.date)),
+				m.text
+			)
+		)
+	});
+	
 	game.UI.hasWorks = false;
-	game.UI.specWorks = content.worklists.perSpec.map(function(work) {
+	game.UI.specWorks = content.worklists.withSpec.map(function(work) {
 		if (work.requiments(l_spec) > 0) {
 			game.UI.hasWorks = true;
-			return Inferno.createElement('div', {className:'line linebar dd b', onClick:function() {utils.callPopup({
-				id:'work_'+game.UI.currentSpec.stats.experience,
-				text:'Назначить специалиста на задание? Потребуется <...>',
-				buttons:[{
-					text: 'Отмена',
-					callback: 'close'
-				}]
-			})}}, 
+			let resList = '', cost = work.calcCost(l_spec, l_spec.ministry, l_spec.location);
+			if (cost!={}) {
+				let unf = '';
+				for (let k in cost) {
+					if (k == 'text') unf = cost[k];
+					else resList+= strings.resources[k]+': '+cost[k]+'\n';
+				}
+				resList+=unf;
+			}
+			else resList = 'Не требуются особые затраты';
+			
+			return Inferno.createElement('div', {className:'line linebar dd b', onClick:function() {
+				let specId = 0;
+				utils.callPopup({
+					id:'work_'+game.UI.currentSpec.stats.experience,
+					text:(l_spec.tasks.length==0?strings.UI.messages.work:strings.UI.messages.workBusy)+'\n'+resList,
+					buttons:[{
+						text: 'OK',
+						callback: function() {
+							utils.startTask(work, [l_spec.id], l_spec.ministry, l_spec.location);
+							utils.closePopup('work_'+game.UI.currentSpec.stats.experience)
+						}
+					},{
+						text: 'Отмена',
+						callback: function() {utils.closePopup('work_'+game.UI.currentSpec.stats.experience)}
+					}]
+				})
+			}}, 
 				Inferno.createElement('div', {className:'p',style:'width:'+work.requiments(l_spec)+'%'}, null),
 				Inferno.createElement('div', {className:'d'}, 
 					Inferno.createElement('div', {className:'task', style:'background-image:url('+work.iconUrl+');background-position: '+(-work.iconOffset*100)+'% 0'}, ' '),
@@ -227,13 +301,34 @@ content.gameCycles.main = function() {
 	
 	game.UI.currentWorks = l_spec.tasks.map(function(workId) {
 		let task = world.tasks[workId];
-		let work = content.works[task.taskId];
-		return Inferno.createElement('div', {className:'line linebar dd b'}, 
-			Inferno.createElement('div', {className:'p',style:'width:'+100*task.value/task.target+'%'}, null),
+		let work = content.works[task.id];
+		return Inferno.createElement('div', {className:'line linebar dd b', onClick:function() {
+				let popUp = {
+					id:'work_stop_'+game.UI.currentSpec.stats.experience,
+					text:'Отменить выполнение задания?',
+					buttons:[{
+						text: 'Снять этого специалиста с задания',
+						callback: function() {
+							utils.stopTask(task, l_spec, 1);
+							utils.closePopup(popUp.id)
+						}
+					},{
+						text: 'Отменить выполнение заданий для всех',
+						callback: function() {
+							task.workers.forEach(function(w, i, a) {utils.stopTask(task, world.specs[w], 1)});
+							utils.closePopup(popUp.id)
+						}
+					},{
+						text: 'Отмена',
+						callback: function() {utils.closePopup(popUp.id);}
+					}]};
+				utils.callPopup(popUp);
+			}}, 
+			Inferno.createElement('div', {className:'p',style:'width:'+utils.workPercent(task, true, l_spec)+'%'}, null),
 			Inferno.createElement('div', {className:'d'}, 
 				Inferno.createElement('div', {className:'task', style:'background-image:url('+work.iconUrl+');background-position: '+(-work.iconOffset*100)+'% 0'}, ' '),
 				work.name,
-				Inferno.createElement('div', {className:'c'}, parseInt(100*task.value/task.target)+'%')
+				Inferno.createElement('div', {className:'c'}, utils.workPercent(task, false, l_spec))
 			),
 			Inferno.createElement('div', {className:'e'},work.description)
 		)
@@ -278,7 +373,10 @@ content.gameCycles.main = function() {
 							Inferno.createElement('span', {className:'c'}, utils.getLevel(l_spec))
 						)
 					),
-					Inferno.createElement('div', {className:'line sp'}, utils.getClassName(l_spec)),
+					Inferno.createElement('div', {className:'line'}, 
+						Inferno.createElement('div', {className:'sp'}, utils.getClassName(l_spec)),
+						Inferno.createElement('span', {className:'r'}, utils.getClassName(l_spec))
+					),
 					Inferno.createElement('div', {className:'line linebar st_str'}, 
 						Inferno.createElement('div', {className:'p',style:'width:'+utils.getEndurance(l_spec)*100+'%'}, null),
 						Inferno.createElement('div', {className:'d'}, strings.UI.endurance,
@@ -349,11 +447,23 @@ content.gameCycles.main = function() {
 						(game.UI.specPerks.length == 0?strings.UI.noPerks:game.UI.specPerks)
 					),
 					Inferno.createElement('div', {className:'pad sp_half'},
-						l_notice
+						l_notice,
+						Inferno.createElement('div', {className:'pad sp_inv'},
+							'Изменить уровень оплаты',
+							Inferno.createElement('div', {className:'b', style:'width:16%', onClick:function() {if (l_spec.attributes.currentPayout>100) l_spec.attributes.currentPayout-=100;}},'---'),
+							Inferno.createElement('div', {className:'b', style:'width:16%', onClick:function() {if (l_spec.attributes.currentPayout>10) l_spec.attributes.currentPayout-=10;}},'--'),
+							Inferno.createElement('div', {className:'b', style:'width:15%', onClick:function() {if (l_spec.attributes.currentPayout>1) l_spec.attributes.currentPayout--;}},'-'),
+							Inferno.createElement('div', {className:'b', style:'width:15%', onClick:function() {l_spec.attributes.currentPayout++;}},'+'),
+							Inferno.createElement('div', {className:'b', style:'width:16%', onClick:function() {l_spec.attributes.currentPayout+=10;}},'++'),
+							Inferno.createElement('div', {className:'b', style:'width:16%', onClick:function() {l_spec.attributes.currentPayout+=100;}},'+++')
+						)
 					)
 				),
 				Inferno.createElement('div', {className:'pad sp_info'}, game.UI.currentWorks),
-				Inferno.createElement('div', {className:'pad sp_info'}, (game.UI.hasWorks?game.UI.specWorks:strings.UI.noWork))
+				Inferno.createElement('div', {className:'pad sp_info'}, (game.UI.hasWorks?game.UI.specWorks:strings.UI.noWork)),
+				(game.UI.specNotes==0?null:Inferno.createElement('div', {className:'ux pad sp_info table st'}, 
+					Inferno.createElement('div', {className:'t3'},game.UI.specNotes)
+				))
 			);
 	}
 	Inferno.render(game.UI.specProfile, document.getElementById("specinfo").getElementsByClassName('cc')[0]);

@@ -7,7 +7,7 @@ class perk {
 		this.secrecy = 0;
 		this.whenGet = function(spec) {};
 		this.onTask = function(spec) {};
-		this.onIdle = function(spec) {};
+		this.onIdle = function(spec, endReason) {};
 	}
 }
 

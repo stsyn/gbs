@@ -32,7 +32,7 @@ window.onload = function() {
 		}
 		catch(ex) {
 			alert('Сохранение параметров запуска невозможно! Для продолжения игры сохраните ссылку, выданную при сохранении внутри игры!');
-			document.getElementById('launch').href+='?'+encodeURI(JSON.stringify(x));
+			document.getElementById('launch').href+='#'+encodeURI(JSON.stringify(x));
 			document.getElementById('launch').click();
 		}
 	});

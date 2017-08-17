@@ -6,6 +6,7 @@ function consts_proto() {
 	this.specUpdateInterval = 12*60;
 	this.sleepOverWork = 4;
 	this.workOverflow = 6;
+	this.maxNotifies = 50;
 	
 	this.nextLevel = [200,600,1600,3200,6200,10600,18000,28400,45000]; //+200 +400 +600+400 +800+800 +1000+1200+800 +1200+1600+1600 +1400+2000+2400+1600 +1600+2400+3200+3200 +1800+2800+4000+4800+3200
 	this.maxLevel = this.nextLevel.length;
@@ -24,7 +25,7 @@ var utils = {
 		catch (ex) {
 			if (!silent) utils.callPopup({text:'Cannot save world.<br>'+ex, id:'save_error', buttons:[{
 				text:'OK',
-				callback: 'close'
+				callback: function() {utils.closePopup('save_error')}
 			},{
 				text:'Save to URL',
 				callback: utils.saveWorld2Url
@@ -41,7 +42,7 @@ var utils = {
 			buttons:[{
 				text:'Скопируйте адрес здесь',
 				callback:function() {},
-				href:'game.html?'+encodeURI(JSON.stringify(world))
+				href:'game.html#'+encodeURI(JSON.stringify(world))
 			},{
 				text:'Выйти',
 				callback:function() {history.back()} 
@@ -59,11 +60,11 @@ var utils = {
 		}
 	},
 	
-	getTime() {
+	getTime(time) {
 		let t = '';
-		let d = new Date(parseInt(world.time * 120000));
-		t += ((parseInt(world.time/60) % 12)<10?'0'+(parseInt(world.time/60) % 12):(parseInt(world.time/60) % 12)) + ':';
-		t += ((parseInt(world.time) % 60)<10?'0'+(parseInt(world.time) % 60):(parseInt(world.time) % 60)) + ' ';
+		let d = new Date(parseInt(time * 120000));
+		t += ((parseInt(time/60) % 12)<10?'0'+(parseInt(time/60) % 12):(parseInt(time/60) % 12)) + ':';
+		t += ((parseInt(time) % 60)<10?'0'+(parseInt(time) % 60):(parseInt(time) % 60)) + ' ';
 		t += (d.getUTCDate()<10?('0'+d.getUTCDate()):d.getUTCDate()) + '/';
 		t += (d.getUTCMonth()+1<10?('0'+(d.getUTCMonth()+1)):d.getUTCMonth()+1) + '/';
 		t += (d.getUTCFullYear()%100);
@@ -97,12 +98,52 @@ var utils = {
 		}
 	},
 		
+	addNotify(target, id, level, text) {
+		let i, local = false;
+		i = world.lastMessageId % consts.maxNotifies;
+		if (world.lastMessageId >= consts.maxNotifies) {
+			let u = world.messages[i];
+			for (let j=0; j<u.containerId.length; j++) {
+				let k;
+				for (k=0; k<world[u.containerType][u.containerId[j]].messages.length; k++) 
+					if (world[u.containerType][u.containerId[j]].messages[k] == u.id) break;
+				world[u.containerType][u.containerId[j]].messages.splice(k, 1);
+			}
+		}
+		world.messages[i] = new message(target, id, level, text, world.lastMessageId);
+		world.lastMessageId++;
+		if (target == 'specs') for (i=0; i<id.length; i++) if (id[i] == game.UI.currentSpec.id) {
+			local = true;
+			break;
+		}
+		for (i=0; i<id.length; i++) {
+			if (world[target][id[i]].notifyLevel == -1) world[target][id[i]].notifyLevel = level;
+			else if (world[target][id[i]].notifyLevel>level) world[target][id[i]].notifyLevel = level;
+		}
+		if (local) setTimeout(function() {game.UI.tryReadMessages(game.UI.currentSpec)}, 3000);
+	},
+	
+	getMessage(id) {
+		for (let i=0; i<world.messages.length; i++) if (id == world.messages[i].id) return world.messages[i];
+	},
+	
+	getMessageFullText(id) {
+		let m = utils.getMessage(id), s='';
+		for (let i=0; i<m.containerId.length; i++) {
+			if (i==0) s+=world.specs[m.containerId[i]].stats.name;
+			else s+=', '+world.specs[m.containerId[i]].stats.name;
+		}
+		return s+' ['+utils.getTime(m.date)+'] '+m.text;
+	},
 	
 	statsSum(spec) {return spec.stats.charisma+spec.stats.intellect+spec.stats.endurance},
 	
 	levelAmplifier(spec) {return 1024*Math.pow(utils.getLevel(spec),1.25)},
 	
-	levelPercent(spec) {return (spec.stats.level==consts.maxLevel?100:spec.stats.experience*100/consts.nextLevel[spec.stats.level])},
+	levelPercent(spec) {
+		let u = (spec.stats.level>=consts.maxLevel?100:spec.stats.experience*100/consts.nextLevel[spec.stats.level]);
+		return (u>100?100:u);
+	},
 	
 	getCharisma(spec) {return spec.stats.charisma/utils.statsSum(spec)},
 	
@@ -252,15 +293,26 @@ var utils = {
 		}
 	},
 	
+	levelUp(spec) {
+		spec.stats.experience -= consts.nextLevel[spec.stats.level];
+		spec.stats.level++;
+		utils.addNotify('specs', [spec.id], 2, strings.UI.messages.levelUpped);
+	},
+	
 	getCurrentWork(spec) {
 		if (spec.tasks.length == 0) return content.works.w_sys_relaxing;
+		if (!world.tasks[spec.tasks[0]].hasStarted) return content.works.w_sys_relaxing; 
 		else return world.tasks[spec.tasks[0]];
+	},
+	
+	getCurrentWorkIconAndOffset(spec) {
+		
 	},
 	
 	closePopup(popup) {
 		game.UI.popups.pop();
 		if (game.UI.popups.length == 0) utils.changeSpeed(game.UI.tspeed);
-		let e = document.getElementById("popup_"+popup.id);
+		let e = document.getElementById("popup_"+popup);
 		e.parentNode.removeChild(e);
 	},
 	
@@ -275,7 +327,6 @@ var utils = {
 		if (popup.buttons!=undefined && popup.buttons.length > 0) {
 			b = popup.buttons.map(function (b) {
 				let x = b.callback;
-				if (x == 'close') x = function() { utils.closePopup(popup)};
 				let hasUrl = (b.href != undefined);
 				return Inferno.createElement((hasUrl?'a':'div'), {className:'b fs', onClick:x, href:b.href, target:'_blank'}, b.text)
 			});
@@ -294,7 +345,7 @@ var utils = {
 		z.appendChild(z1);
 		Inferno.render(
 			Inferno.createElement('div', {className:'cc big', style:'text-align:center'}, 
-				Inferno.createElement('div', {className:'pad bl'},popup.text),
+				Inferno.createElement('div', {className:'pad bl', style:'white-space:pre-wrap'},popup.text),
 				b
 			)
 		, z1);
@@ -350,9 +401,7 @@ var utils = {
 		world.ministries[ministry].specs.push(id);
 	},
 	
-	specTick(spec) {
-		let m = 1/spec.counters.updateMult;
-		
+	OIAspecTick(spec) {
 		//перерасчет работы
 		if (spec.tasks.length != 0) spec.attributes.workbalance += m;
 		else spec.attributes.workbalance -= consts.sleepOverWork*m;
@@ -366,7 +415,6 @@ var utils = {
 		if (spec.attributes.workbalance < -consts.workOverflow) spec.attributes.workSatisfaction++;
 		if (spec.attributes.workSatisfaction<-100) spec.attributes.workSatisfaction = -100;
 		if (spec.attributes.workSatisfaction>100) spec.attributes.workSatisfaction = 100;
-		utils.calcPayout(spec);
 		
 		let d = (utils.calcPayoutV(spec)-50)*2;
 		if (spec.attributes.currentPayout < spec.attributes.payout*9/10) {
@@ -380,6 +428,14 @@ var utils = {
 		else if (spec.attributes.payoutSatisfaction < 0) spec.attributes.payoutSatisfaction++;
 		else if (spec.attributes.payoutSatisfaction > 0) spec.attributes.payoutSatisfaction--;
 		
+	},
+	
+	specTick(spec) {
+		let m = 1/spec.counters.updateMult;
+		
+		if (spec.stats.experience >= consts.nextLevel[spec.stats.level]) utils.levelUp(spec);
+		
+		utils.calcPayout(spec);
 		//обновление видимости перков
 		for (let i=0; i<spec.isPerkExplored.length; i++) {
 			if (!spec.isPerkExplored[i]) {
@@ -393,9 +449,150 @@ var utils = {
 		spec.counters.main = consts.specUpdateInterval;
 	},
 	
+	destroyWork(work, res) {
+		let pat = content.works[work.id];
+		if (res == 0) utils.addNotify('specs', work.workers, 2, strings.UI.messages.workCompleted.replace('%work%', pat.name));
+		else if (res == 3) utils.addNotify('specs', work.workers, 0, strings.UI.messages.workFailed.replace('%work%', pat.name));
+			
+		for (let i=0; i<work.workers.length; i++) {
+			let s = world.specs[work.workers[i]].tasks;
+			for (let j=0; j<s.length; j++) {
+				if (s[j] == work.internalId) {
+					s.splice(j, 1);
+					for (let j=0; j<spec.perks.length; j++) {
+						content.perks.c[spec.perks[j]].onIdle(spec, (res+1)/2);
+					}
+					break;
+				}
+			}
+		}
+		delete world.tasks[work.internalId];
+	},
+	
+	failTask(work) {
+		let pat = content.works[work.id]; 
+		pat.whenFailed(work);
+		destroyWork(work, 3);
+	},
+	
+	stopTask(work, spec, reason) {
+		let pat = content.works[work.id]; 
+		let i;
+		if (work.workers.length == pat.minWorkers) {
+			if (reason == 1) utils.addNotify('specs', work.workers, 1, strings.UI.messages.workCanceled.replace('%work%', pat.name));
+			else if (reason == 2) utils.addNotify('specs', work.workers, 0, strings.UI.messages.workImpossible.replace('%work%', pat.name));
+		}
+		for (i=0; i<work.workers.length; i++) {
+			if (work.workers[i] == spec.id) break;
+		}
+		
+		if (work.hasStartedPerSpec[i]) {
+			pat.whenStoppedPerSpec(work, i);
+			for (let j=0; j<spec.perks.length; j++) {
+				content.perks.c[spec.perks[j]].onIdle(spec,0);
+			}
+		}
+		work.workers.splice(i,1);
+		work.hasStartedPerSpec.splice(i,1);
+		
+		for (i=0; i<spec.tasks.length; i++) {
+			if (spec.tasks[i] == work.internalId) break;
+		}
+		spec.tasks.splice(i,1);
+		
+		if (work.workers.length < pat.minWorkers) {
+			if (work.hasStarted) pat.whenStopped(work);
+			utils.destroyWork(work, reason);
+			return 1;
+		}
+		if (reason == 1) utils.addNotify('specs', spec.id, 1, strings.UI.messages.workCanceledForSpec.replace('%work%', pat.name));
+		else if (reason == 2) utils.addNotify('specs', spec.id, 0, strings.UI.messages.workImpossibleForSpec.replace('%work%', pat.name));
+		return 0;
+	},
+	
+	workPercent(work, nums, spec) {
+		let s = parseInt(100*work.value/work.target);
+		let n;
+		for (n=0; n<work.workers.length; n++) if (work.workers[n] == spec.id) break;
+		if ((work.separated && !work.hasStartedPerSpec[n]) || (!work.separated && !work.hasStarted)) return (nums?0:'В очереди');
+		if (s<0) return (nums?0:'Выполняется...');
+		return (nums?s:s+'%');
+	},
+	
+	startWork(pat, work) {
+		//reses
+		pat.whenStart(work);
+		work.hasStarted = true;
+	},
+	
+	workTick(work) {
+		let pat = content.works[work.id];
+		work.timeElapsed += (consts.gameSpeed[world.currentSpeed])/consts.fps;
+		
+		//проверка на старт работы и количество работников
+		let working = 0;
+		work.workers.forEach(function (worker, i, a) {
+			if (pat.requiments(world.specs[worker])<=0) {
+				if (utils.stopTask(work, world.specs[worker], 2)) return;
+			}
+			else if (world.specs[worker].tasks[0] == work.internalId) {
+				working++;
+			}
+		});
+		if (working>=pat.minWorkers && !work.hasStarted) utils.startWork(pat, work);
+		
+		//обновление работы
+		if (working>=pat.minWorkers) {
+			work.workers.forEach(function (worker, i, a) {
+				if (world.specs[worker].tasks[0] == work.internalId) {
+					if (pat.minWorkers==1 && !work.hasStartedPerSpec[i]) {
+						work.hasStartedPerSpec[i] = true;
+						let spec = world.specs[worker];
+						pat.whenStartPerSpec(work, spec);
+						for (let j=0; j<spec.perks.length; j++) {
+							content.perks.c[spec.perks[j]].onTask(spec);
+						}
+					}
+					pat.updatePerSpec(work, world.specs[worker]);
+				}
+			});
+			pat.update(work);
+		}
+		
+		//выполнение
+		if (work.value < work.target) work.timeBeforeUpdate += pat.updateInterval;
+		else {
+			pat.whenComplete(work);
+			utils.destroyWork(work, 0);
+		}
+	},
+	
 	makePerkVisible(spec, perkId) {
 		//TODO add notification
 		spec.isPerkExplored[perkId] = true;
+	},
+	
+	startTask(task, spec, ministry, location) {
+		let i;
+		for (i=0; world.tasks[i]!=undefined; i++) 0;
+		world.tasks[i] = new work(task.id, spec, location, ministry, i);
+		let workO = world.tasks[i];
+		for (let s=0; s<spec.length; s++) {
+			world.specs[spec[s]].tasks.push(i);
+			workO.hasStartedPerSpec[s] = false;
+		}
+		//task.whenStart(i);
+		
+		let working = 0;
+		workO.workers.forEach(function (worker, i, a) {
+			if (task.requiments(world.specs[worker])<0) {
+				if (utils.stopTask(workO, world.specs[worker], 2)) return;
+			}
+			else if (world.specs[worker].tasks[0] == workO.internalId) {
+				working++;
+			}
+		});
+		if (working>=task.minWorkers && !workO.hasStarted) utils.startWork(task, workO);
 	},
 	
 	rgb2hsv(color) {

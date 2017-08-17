@@ -10,6 +10,8 @@
                 <File name="src\entities\specs.js" />
                 <File name="src\entities\world.js" />
                 <File name="src\entities\tasks.js" />
+                <File name="src\entities\messages.js" />
+                <File name="src\entities\cities.js" />
             </Folder>
             <Folder name="lang">
                 <File name="src\lang\ru.js" />
@@ -18,6 +20,7 @@
                 <File name="src\content\specs.js" />
                 <File name="src\content\perks.js" />
                 <File name="src\content\tasks.js" />
+                <File name="src\content\cities.js" />
             </Folder>
             <File name="src\fontload.js" />
             <File name="src\loader.js" />

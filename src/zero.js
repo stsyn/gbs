@@ -11,6 +11,7 @@ content.works = {};
 
 content.worklists = {};
 content.worklists.perCity = [];
+content.worklists.withSpec = [];
 content.worklists.perSpec = [];
 content.worklists.perMinistry = [];
 content.worklists.perOwnedCity = [];

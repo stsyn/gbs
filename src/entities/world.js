@@ -3,6 +3,8 @@ function world_proto() {
 	this.ministries = {};
 	this.specs = [];
 	this.tasks = [];
+	this.messages = [];
+	this.lastMessageId = 0;
 	this.time = 0;
 };
 var world = new world_proto();
@@ -40,7 +42,8 @@ content.worldCreators.push(function(w) {
 				treat:0,
 				money:0,
 				part:0
-			}
+			},
+			specTicks:[]
 		};
 	}
 	w.ministries.Z.isCountry = true;
@@ -48,6 +51,7 @@ content.worldCreators.push(function(w) {
 	w.ministries.EQ.isCountry = true;
 	w.ministries.OIA.stats.part = null;
 	w.playerMinistry = 'OIA';
+	w.ministries.OIA.specTicks.push(utils.OIAspecTick);
 	
 	let tarr = [];
 	for (let i=0; i<60; i++) {

@@ -1,16 +1,18 @@
 'use strict';
 class work {
-	constructor(taskId, specs, location, ministry) {
+	constructor(taskId, specs, location, object, gottenId) {
 		this.value = 0;											//доля выполнения
-		this.target = content.tasks[taskId].target;				//цель в количестве
-		this.timeBeforeUpdate = work[id].updateInterval;		//время до обновления
+		this.target = content.works[taskId].target;				//цель в количестве
+		this.timeBeforeUpdate = content.works[taskId].updateInterval;		//время до обновления
 		this.timeElapsed = 0;									//прошло времени
 		this.workers = specs;								
 		this.location = location;
-		this.ministry = ministry;
-		this.workId = taskId;
+		this.object = object;
+		this.id = taskId;
+		this.internalId = gottenId;
 		this.status = '';
-		this.effectiency = 0;									//от 0 до 100
+		this.hasStarted = false;
+		this.hasStartedPerSpec = [];
 	}
 }
 
@@ -22,16 +24,22 @@ class workPattern {
 		this.description = '';
 		
 		this.target = 0;										//цель в количестве			
-		this.maxWorkers = 0;									
+		this.maxWorkers = 0;
+		this.minWorkers = 0;			
 		this.updateInterval = 0;
-		this.stopable = true;								
+		this.stopable = true;		
+		this.workSeparate = false;
+		this.onlyOne = false;
 		
-		this.calcCost = function(spec, ministry, location) {return {};};	//стоимость в любых применимых попугаях
+		this.calcCost = function(spec, object, location) {return {};};	//стоимость в любых применимых попугаях
 		this.requiments = function(spec) {return 0;};			//проверяет пригодность специалиста. 1~100 выдаст в процентах эффективность, отрицательное и 0 - негоден
-		this.whenStart = function() {return 0;};
-		this.whenComplete = function() {return 0;};
-		this.update = function() {return 0;};
-		this.whenFailed = function() {return 0;};
-		this.whenStopped = function() {return 0;};
+		this.whenStart = function(task) {return 0;};
+		this.whenStartdPerSpec = function(task, worker) {return 0;};
+		this.whenComplete = function(task) {return 0;};
+		this.update = function(task) {return 0;};
+		this.updatePerSpec = function(task, worker) {return 0};
+		this.whenFailed = function(task) {return 0;};
+		this.whenStopPerSpec = function(task, worker) {return 0;};
+		this.whenStop = function(task) {return 0;};
 	}
 }

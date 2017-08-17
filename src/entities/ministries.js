@@ -20,6 +20,11 @@ class ministry {
 		this.stats.loyalty = 0;		//ладно, допустим, это верность министерства относительно ДМД. Для Эквестрии оно значит, насколько ДМД долбаеб
 		this.stats.treat = 0; 		//только для стран, уровень угрозы
 		this.stats.part = 0;
+		
+		this.specsTicks = [];
+		
+		this.messages = [];
+		this.notifyLevel = -1;
 	}
 }
 function m_init() {return 0}

@@ -1,11 +1,12 @@
 "use strict";
 class spec {
 	constructor(spec = {
-		stats:{name:'',charisma:0,intellect:0,endurance:0,level:-1,experience:undefined,gender:0,specie:-1,unspecified:[],
+		stats:{name:'',charisma:0,intellect:0,endurance:0,level:-1,experience:undefined,gender:0,specie:-1,
 			portrait:{bodyColor:'',bodyUrl:'',maneColor:'',maneUrl:'',url:''}},
-		attributes:{payout:undefined,maxHealth:0,involvement:0,payoutSatisfaction:0,workSatisfaction:90,worktypeSatisfaction:50,workbalance:0,secrecy:100,unspecified:[]},
-		ministry:null,owner:null,location:null,perks:null,isPerkExplored:[],tasks:[]
+		attributes:{payout:undefined,maxHealth:0,involvement:0,payoutSatisfaction:0,workSatisfaction:90,worktypeSatisfaction:50,workbalance:0,secrecy:100},
+		ministry:null,owner:null,location:null,perks:null,isPerkExplored:[],tasks:[],messages:[],notifyLevel:null
 	}) {
+		this.id = world.specs.length;
 		this.shadow = {};
 		this.shadow.charismaMult = 1;
 		this.shadow.intellectMult = 1;
@@ -31,6 +32,9 @@ class spec {
 		this.shadow.satisfactionBonus = 0;
 		
 		this.shadow.excludePerkLists = {};
+		
+		this.messages = [];
+		this.notifyLevel = -1;
 		
 		this.stats = spec.stats;
 		this.attributes = spec.attributes;

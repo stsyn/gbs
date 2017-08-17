@@ -17,7 +17,7 @@ function parseInput() {
 	catch (ex) {
 		try {
 			//данные закинуты в ссылку
-			x = JSON.parse(decodeURI(location.href.split('?')[1]));
+			x = JSON.parse(decodeURI(location.hash.slice(1)));
 			x.urlHack = true;
 			try {
 				//если туда закинули мир
@@ -60,10 +60,10 @@ function parseInput() {
 function init() {
 	let conf = parseInput();
 	var compilations = {
-		def:['src/zero.js','src/entities/ministries.js','src/entities/world.js','src/entities/perks.js','src/entities/specs.js','src/entities/tasks.js', 'src/player.js', 'src/game.js']
+		def:['src/zero.js','src/entities/ministries.js','src/entities/cities.js','src/entities/messages.js','src/entities/world.js','src/entities/perks.js','src/entities/specs.js','src/entities/tasks.js', 'src/player.js', 'src/game.js']
 	}
 	var contentpacks = {
-		def:['src/content/specs.js','src/content/perks.js','src/content/tasks.js']
+		def:['src/content/specs.js','src/content/cities.js','src/content/perks.js','src/content/tasks.js']
 	}
 	var currentCompilation = conf.engine;
 	var currentPack = conf.content;
@@ -116,6 +116,7 @@ function init() {
 			return;
 		}
 		document.querySelector('#popUp .loadtext').innerHTML = 'Loading '+m[i]+'...';
+		document.querySelector('#popUp .loadline').style.width = 100*i/m.length+'%';
 		s.src = m[i];
 		i++;
 		document.head.appendChild(s);
@@ -128,37 +129,97 @@ function init() {
 }
 
 function finish_init(loaders, c) {
-	document.querySelector('#popUp .loadtext').innerHTML = 'Postloading...';
-	for (let i=0; i<loaders.length; i++) loaders[i]();
-	document.querySelector('#popUp .loadtext').innerHTML = 'Launching...';
-	for (let i=0; i<content.gameCreators.length; i++) content.gameCreators[i]();
-	if (!c.hasWorld) {
-		document.querySelector('#popUp .loadtext').innerHTML = 'Building world...';
-		for (let i=0; i<content.worldCreators.length; i++) content.worldCreators[i](world);
-		//insert current configuration in world
-		world.config = c;
-	}
-	else {
-		document.querySelector('#popUp .loadtext').innerHTML = 'Loading world...';
-		if (c.urlHack) {
-			world = JSON.parse(decodeURI(location.href.split('?')[1]));
-			delete world.mods;
-			delete world.engine;
-			delete world.content;
-			delete world.lang;
-			delete world.hasWorld;
-			delete world.urlHack;
-			console.log(world);
+	document.querySelector('#popUp .loadline').style.width = '100%';
+	
+	var af = function() {
+		document.querySelector('#popUp .loadtext').innerHTML = 'Postloading...';
+		let i=0;
+		let afa = function () {
+			loaders[i]();
+			document.querySelector('#popUp .loadline').style.width = 100*i/loaders.length+'%';
+			if (++i<loaders.length) setTimeout(afa, 10);
+			else {
+				document.querySelector('#popUp .loadline').style.width = '100%';
+				setTimeout(bf, 10);
+			}
+		};
+		setTimeout(afa, 10);
+	};
+	
+	var bf = function() {
+		document.querySelector('#popUp .loadtext').innerHTML = 'Launching...';
+		let i=0;
+		let bfa = function () {
+			content.gameCreators[i]();
+			document.querySelector('#popUp .loadline').style.width = 100*i/content.gameCreators.length+'%';
+			if (++i<content.gameCreators.length) setTimeout(bfa, 10);
+			else {
+				document.querySelector('#popUp .loadline').style.width = '100%';
+				setTimeout(cf, 10);
+			}
+		}
+		setTimeout(bfa, 10);
+	};
+	
+	var cf = function() { 
+		if (!c.hasWorld) {
+			document.querySelector('#popUp .loadtext').innerHTML = 'Building world...';
+			let i=0;
+			let cfa = function()  {
+				content.worldCreators[i](world);
+				document.querySelector('#popUp .loadline').style.width = 100*i/content.worldCreators.length+'%';
+				if (++i<content.worldCreators.length) setTimeout(bfa, 10);
+				else {
+					world.config = c;
+					document.querySelector('#popUp .loadline').style.width = '100%';
+					setTimeout(df, 10);
+				}
+			}
+			setTimeout(cfa, 10);
 		}
 		else {
-			world = JSON.parse(localStorage._gbs_world);
+			document.querySelector('#popUp .loadline').style.width = 0;
+			document.querySelector('#popUp .loadtext').innerHTML = 'Loading world...';
+			if (c.urlHack) {
+				world = JSON.parse(decodeURI(location.hash.slice(1)));
+				delete world.mods;
+				delete world.engine;
+				delete world.content;
+				delete world.lang;
+				delete world.hasWorld;
+				delete world.urlHack;
+			}
+			else {
+				world = JSON.parse(localStorage._gbs_world);
+			}
+			document.querySelector('#popUp .loadline').style.width = '100%';
+			setTimeout(df, 10);
 		}
-	}
-	document.querySelector('#popUp .loadtext').innerHTML = 'Postlaunching...';
-	for (let i=0; i<content.gameLaunchers.length; i++) content.gameLaunchers[i]();
-	document.querySelector('#popUp .loadtext').innerHTML = 'Launching...';
-	setTimeout(function() {
-		document.getElementById('popUp').classList.remove('d');
-		document.getElementById('popUp').getElementsByClassName('loadtext')[0].style.display="none";
-		content.gameCycles[gameCycle]()},300);
+	};
+	
+	var df = function() {
+		document.querySelector('#popUp .loadtext').innerHTML = 'Postlaunching...';
+		let i=0;
+		let dfa = function ()  {
+			content.gameLaunchers[i]();
+			document.querySelector('#popUp .loadline').style.width = 100*i/content.gameLaunchers.length+'%';
+			if (++i<content.gameLaunchers.length) setTimeout(dfa, 10);
+			else {
+				document.querySelector('#popUp .loadline').style.width = '100%';
+				setTimeout(ef, 10);
+			}
+		}
+		setTimeout(dfa, 10);
+	};
+	
+	var ef = function() {
+		document.querySelector('#popUp .loadtext').innerHTML = 'Launching...';
+		setTimeout(function() {
+			document.getElementById('popUp').classList.remove('d');
+			document.getElementById('popUp').getElementsByClassName('loadtext')[0].style.display="none";
+			content.gameCycles[gameCycle]()},300);
+		location.hash = '';
+	};
+	
+	setTimeout(af, 100);
 }
