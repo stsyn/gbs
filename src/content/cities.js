@@ -5,12 +5,16 @@ content.cities.canterlot = {
 	owner:'EQ',
 	
 	attributesStatic:{
-		ponyCountPlus:60,
-		ponyCountMult:1,
+		ponyCountMin:60,
 		ponyCountMax:75,
-		powerCountPlus:60,
-		powerCountMult:1,
-		powerCountMax:100,
+		
+		techPart:80,
+		militaryPart:10,
+		industrialPart:10,
+		
+		techMult:1,
+		militaryMult:1,
+		industrialMult:1,
 		racesEffectiencyMult:[1,1,1,1,0.5]
 	},
 	tick:function(city) {return 0}
@@ -22,12 +26,17 @@ content.cities.ponyville = {
 	owner:'EQ',
 	
 	attributesStatic:{
-		ponyCountPlus:30,
-		ponyCountMult:1,
+		ponyCountMin:30,
 		ponyCountMax:60,
-		powerCountPlus:30,
-		powerCountMult:1,
-		powerCountMax:100,
+		
+		techPart:30,
+		militaryPart:30,
+		industrialPart:40,
+		
+		techMult:1,
+		militaryMult:1,
+		industrialMult:1,
+		
 		racesEffectiencyMult:[1,1,1,1,1]
 	},
 	tick:function(city) {return 0}
@@ -39,12 +48,17 @@ content.cities.manehattan = {
 	owner:'EQ',
 	
 	attributesStatic:{
-		ponyCountPlus:150,
-		ponyCountMult:1,
+		ponyCountMin:150,
 		ponyCountMax:200,
-		powerCountPlus:100,
-		powerCountMult:1.2,
-		powerCountMax:200,
+		
+		techPart:20,
+		militaryPart:20,
+		industrialPart:60,
+		
+		techMult:1,
+		militaryMult:1,
+		industrialMult:1,
+		
 		racesEffectiencyMult:[1,1,1,1,1]
 	},
 	tick:function(city) {return 0}
@@ -56,12 +70,17 @@ content.cities.cloudsdale = {
 	owner:'EQ',
 	
 	attributesStatic:{
-		ponyCountPlus:40,
-		ponyCountMult:0.8,
+		ponyCountMin:40,
 		ponyCountMax:80,
-		powerCountPlus:100,
-		powerCountMult:1,
-		powerCountMax:200,
+		
+		techPart:5,
+		militaryPart:90,
+		industrialPart:5,
+		
+		techMult:0.8,
+		militaryMult:1.2,
+		industrialMult:0.8,
+		
 		racesEffectiencyMult:[0,0.1,2,1,0.0]
 	},
 	tick:function(city) {return 0}
@@ -73,12 +92,17 @@ content.cities.stalliongrad = {
 	owner:'EQ',
 	
 	attributesStatic:{
-		ponyCountPlus:120,
-		ponyCountMult:0.6,
+		ponyCountMin:120,
 		ponyCountMax:180,
-		powerCountPlus:140,
-		powerCountMult:1.4,
-		powerCountMax:200,
+		
+		techPart:30,
+		militaryPart:30,
+		industrialPart:40,
+		
+		techMult:1,
+		militaryMult:1,
+		industrialMult:1.2,
+		
 		racesEffectiencyMult:[2,0.5,0.5,0.25,1]
 	},
 	tick:function(city) {return 0}
@@ -90,12 +114,17 @@ content.cities.fillydelphia = {
 	owner:'EQ',
 	
 	attributesStatic:{
-		ponyCountPlus:150,
-		ponyCountMult:1,
+		ponyCountMin:150,
 		ponyCountMax:200,
-		powerCountPlus:100,
-		powerCountMult:1.2,
-		powerCountMax:200,
+		
+		techPart:20,
+		militaryPart:10,
+		industrialPart:70,
+		
+		techMult:1,
+		militaryMult:1,
+		industrialMult:1.1,
+		
 		racesEffectiencyMult:[1,1,1,1,1]
 	},
 	tick:function(city) {return 0}
@@ -107,12 +136,17 @@ content.cities.hoofington = {
 	owner:'EQ',
 	
 	attributesStatic:{
-		ponyCountPlus:10,
-		ponyCountMult:2,
-		powerCountMax:250,
-		powerCountPlus:10,
-		powerCountMult:2,
-		powerCountMax:300,
+		ponyCountMin:10,
+		ponyCountMax:250,
+		
+		techPart:30,
+		militaryPart:40,
+		industrialPart:30,
+		
+		techMult:1.5,
+		militaryMult:1.5,
+		industrialMult:1.5,
+		
 		racesEffectiencyMult:[1,1,1,1,1]
 	},
 	tick:function(city) {return 0}
@@ -124,12 +158,17 @@ content.cities.roam = {
 	owner:'Z',
 	
 	attributesStatic:{
-		ponyCountPlus:10,
-		ponyCountMult:2,
-		powerCountMax:250,
-		powerCountPlus:10,
-		powerCountMult:2,
-		powerCountMax:300,
+		ponyCountMin:100,
+		ponyCountMax:350,
+		
+		techPart:30,
+		militaryPart:40,
+		industrialPart:30,
+		
+		techMult:1.2,
+		militaryMult:1.2,
+		industrialMult:1.2,
+		
 		racesEffectiencyMult:[0.8,0.8,0.8,1,1.2]
 	},
 	tick:function(city) {return 0}

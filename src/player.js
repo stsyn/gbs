@@ -6,7 +6,7 @@ for (let i=0; i<m.length; i++) {
 	}
 }
 
-var player, plapi = {state:-1, mods:[], random:false, loop:false, name:'XXXX', c:0, c2:0};
+var player, plapi = {state:-1, mods:[], random:false, loop:false, name:'XXXX', c:0, c2:0, loaded:true, ready:false};
 function onYouTubeIframeAPIReady() {
     player = new YT.Player('ytplayer', {
         height: '1',
@@ -14,7 +14,8 @@ function onYouTubeIframeAPIReady() {
 		playerVars: {
 			listType: 'playlist',
 			//list: 'PLdlZZmhB8NZKBTAHgh7YkHjVvwKJJEdsH',
-			list: 'PLBLUz3xoZ6bkr3UC0lFa0GC-ZQBY5deCG',
+			  list: 'PLcHa462awHPlRxfq9Y17FwtBKXtsWNozR',
+			//list: 'PLBLUz3xoZ6bkr3UC0lFa0GC-ZQBY5deCG',
 			loop: 1
 		},
         events: {
@@ -31,16 +32,19 @@ function setVolume(vol) {
 }
 
 function onPlayerReady(event) {
+	plapi.loaded = false;
+	if (!plapi.ready) return;
+	
 	player.setShuffle(plapi.random = !plapi.random);
 	setVolume(plapi.volume = 3);
 	let i, cc = document.querySelector('#player .cc .table').getElementsByClassName('t2')[0].getElementsByClassName('t')[7];
 	for (i=0; i<(6-plapi.volume); i++) cc.getElementsByTagName('svg')[i].style.opacity = '1';
 	for (i; i<5; i++) cc.getElementsByTagName('svg')[i].style.opacity = '0';
-	for (i=0; i<plapi.mods.length; i++) plapi.mods[i]();
 	playerTrackName();
 	playerOrder();
-	//player.nextVideo();
-    //player.pauseVideo();
+	for (i=0; i<plapi.mods.length; i++) plapi.mods[i]();
+	
+	plapi.loaded = true;
 }
 
 function onPlayerStateChange(event) {
@@ -91,6 +95,11 @@ function playerTrackName() {
 }
 
 function playerOrder() {
+	if (player.getPlaylist() == null) {
+		document.querySelector('#player .cc .line').getElementsByClassName('b')[0].innerHTML = (player.getPlaylistIndex()+1)+'/??';
+		console.log('fuck youtube api');
+		return;
+	}
 	document.querySelector('#player .cc .line').getElementsByClassName('b')[0].innerHTML = (player.getPlaylistIndex()+1)+'/'+player.getPlaylist().length;
 }
 
@@ -185,4 +194,6 @@ function m_init() {
 		for (i=0; i<(6-plapi.volume); i++) cc2.getElementsByTagName('svg')[i].style.opacity = '1';
 		for (i; i<5; i++) cc2.getElementsByTagName('svg')[i].style.opacity = '0';
 	});
+	plapi.ready = true;
+	if (!plapi.loaded) onPlayerReady();
 }

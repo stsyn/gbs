@@ -127,7 +127,7 @@ content.works.w_endStudying = {
 	update:function(t) {return 0;},
 	updatePerSpec:function(t, spec) {
 		if (Math.random()*Math.random()*Math.random()*0.4 < utils.getEndurance(spec)) {
-			spec.attributes.health -= parseInt(Math.random() * 10);
+			spec.attributes.health -= parseInt(Math.random()*Math.random()*10);
 			if (spec.attributes.health<=0) return;
 		}
 		t.effectiency = this.requiments(spec);

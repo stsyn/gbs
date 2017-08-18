@@ -3,6 +3,7 @@ function world_proto() {
 	this.ministries = {};
 	this.specs = [];
 	this.tasks = [];
+	this.cities = {};
 	this.messages = [];
 	this.lastMessageId = 0;
 	this.time = 0;
@@ -10,6 +11,7 @@ function world_proto() {
 var world = new world_proto();
 content.worldCreators.push(function(w) {
 	w.time = 0;
+	w.dcounter = utils.time2ms({date:1});
 	document.querySelectorAll('#top .ico1')[1].classList.add('sel');
 	for (let i=0; i<consts.ministries.length; i++) w.ministries[consts.ministries[i]] = new ministry();
 	w.specs.push(new spec(content.presetedSpecs.TS));
@@ -18,6 +20,13 @@ content.worldCreators.push(function(w) {
 	w.specs.push(new spec(content.presetedSpecs.RD));
 	w.specs.push(new spec(content.presetedSpecs.Rarara));
 	w.specs.push(new spec(content.presetedSpecs.PP));
+	
+	for (cityTemplate in content.cities) {
+		if (cityTemplate != 'hoofington') {
+			world.cities[cityTemplate] = new city(content.cities[cityTemplate]);
+			world.cities[cityTemplate].tick = utils.normalCityTick;
+		}
+	}
 	
 	for (let i=0; i<consts.ministries.length; i++) {
 		w.ministries[consts.ministries[i]] = {
@@ -36,9 +45,8 @@ content.worldCreators.push(function(w) {
 			},
 			
 			stats:{
-				ratio:0,
 				military:0,
-				loyalty:0,
+				loyalty:100,
 				treat:0,
 				money:0,
 				part:0
@@ -48,6 +56,9 @@ content.worldCreators.push(function(w) {
 	}
 	w.ministries.Z.isCountry = true;
 	w.ministries.Z.isEnemy = true;
+	w.ministries.Z.loyalty = 10;
+	w.ministries.EQ.money = 500000;
+	w.ministries.OIA.money = 2000;
 	w.ministries.EQ.isCountry = true;
 	w.ministries.OIA.stats.part = null;
 	w.playerMinistry = 'OIA';

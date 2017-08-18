@@ -588,12 +588,12 @@ input:checked + label, input:checked + label .b{background:#cfc !important}
 	margin-left:-.5em;
 	background-size:cover;
 }
-#windows #ministries .p14part {
+.p14part {
 	height:24%;
 	overflow-y:auto;
 	margin-bottom:1%;
 }
-#windows #ministries .p34part {
+.p34part {
 	overflow-y:auto;
 	height:75%;
 }

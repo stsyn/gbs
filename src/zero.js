@@ -28,6 +28,17 @@ content.worldCreators = [];
 content.gameCreators = [];
 content.gameLaunchers = [];
 
+var player = {};
+/*
+Only for linkage!
+
+Fields:
+	.ministry
+	.cities
+	.specs[]
+	.resources[type].value
+*/
+
 var game = {};
 game.UI = {};
 function m_init() {return 0}

@@ -2,7 +2,7 @@
 content.gameLaunchers.push(function() {
 	game.UI.currentSpec = world.specs[0];
 	utils.changeSpeed(3);
-	setTimeout(function() {utils.changeSpeed(1)}, 3000);
+	setTimeout(function() {if (world.currentSpeed == 0) utils.changeSpeed(1)}, 3000);
 });
 
 content.gameCreators.push(function() {
@@ -49,6 +49,38 @@ content.gameCreators.push(function() {
 			)
 		)
 	};
+	
+	game.UI.writeNotifies = function() {
+		//////////////////////////////////////////////////////
+		//					Окно уведомлений		
+		//////////////////////////////////////////////////////
+		
+		game.UI.notifiesTempList = [];
+		let i = world.lastMessageId % consts.maxNotifies, j;
+		if (world.lastMessageId >= consts.maxNotifies) for (j=i; j<consts.maxNotifies; j++) game.UI.notifiesTempList.unshift(world.messages[j])
+		for (j=0; j<i; j++) game.UI.notifiesTempList.unshift(world.messages[j])
+		game.UI.notifiesList = game.UI.notifiesTempList.map(function (m) {
+			let s = '';
+			m.containerId.forEach(function (m, i, a) {
+				s+=world.specs[m].stats.name;
+			});
+			return Inferno.createElement('div', {className:'t2'},
+				Inferno.createElement('div', {className:'t'}, 
+					Inferno.createElement('div', {className:'report', style:'background-position: '+(-100*(m.level+1))+'% 0'}, null)
+				),
+				Inferno.createElement('div', {className:'t'}, 
+					Inferno.createElement('span', {className:'c'}, utils.getTime(m.date)),
+					Inferno.createElement('span', {className:'c'}, s),
+					m.text
+				)
+			)
+		});
+		game.UI.notesContainer = Inferno.createElement('div', {className:'table r ux'}, 
+			Inferno.createElement('div', {className:'t3'}, game.UI.notifiesList)
+		);
+		Inferno.render(game.UI.notesContainer, document.getElementById("news").getElementsByClassName('cc')[0]);
+	};
+	game.UI.writeNotifies();
 });
 
 content.gameCycles.main = function() {
@@ -58,7 +90,14 @@ content.gameCycles.main = function() {
 	if (parseInt(game.UI.bottomOffset/game.UI.bottomSize)>parseInt((game.UI.currentBottomList.length-1)/game.UI.bottomSize)) game.UI.bottomOffset = parseInt((game.UI.currentBottomList.length-1)/game.UI.bottomSize)*game.UI.bottomSize;
 	playerStateUpdate();
 	document.querySelector('#top .c').innerHTML = utils.getTime(world.time);
-	world.time += (consts.gameSpeed[world.currentSpeed])/consts.fps;
+	let dtime = (consts.gameSpeed[world.currentSpeed])/consts.fps;
+	world.time += dtime;
+	world.dcounter -= dtime;
+	
+	if (world.dcounter<=0) {
+		world.dcounter += utils.time2ms({date:1});
+		utils.newDayTick();
+	}
 
 	for (let i=0; i<world.specs.length; i++) {
 		world.specs[i].counters.main -= (consts.gameSpeed[world.currentSpeed])*world.specs[i].counters.updateMult/consts.fps;
@@ -101,35 +140,6 @@ content.gameCycles.main = function() {
 	Inferno.render(game.UI.bottomContainer, document.getElementById("bottom"));
 	
 	//////////////////////////////////////////////////////
-	//					Окно уведомлений		
-	//////////////////////////////////////////////////////
-	
-	game.UI.notifiesTempList = [];
-	let i = world.lastMessageId % consts.maxNotifies, j;
-	if (world.lastMessageId >= consts.maxNotifies) for (j=i; j<consts.maxNotifies; j++) game.UI.notifiesTempList.unshift(world.messages[j])
-	for (j=0; j<i; j++) game.UI.notifiesTempList.unshift(world.messages[j])
-	game.UI.notifiesList = game.UI.notifiesTempList.map(function (m) {
-		let s = '';
-		m.containerId.forEach(function (m, i, a) {
-			s+=world.specs[m].stats.name;
-		});
-		return Inferno.createElement('div', {className:'t2'},
-			Inferno.createElement('div', {className:'t'}, 
-				Inferno.createElement('div', {className:'report', style:'background-position: '+(-100*(m.level+1))+'% 0'}, null)
-			),
-			Inferno.createElement('div', {className:'t'}, 
-				Inferno.createElement('span', {className:'c'}, utils.getTime(m.date)),
-				Inferno.createElement('span', {className:'c'}, s),
-				m.text
-			)
-		)
-	});
-	game.UI.notesContainer = Inferno.createElement('div', {className:'table r ux'}, 
-		Inferno.createElement('div', {className:'t3'}, game.UI.notifiesList)
-	);
-	Inferno.render(game.UI.notesContainer, document.getElementById("news").getElementsByClassName('cc')[0]);
-	
-	//////////////////////////////////////////////////////
 	//					Окно специалистов		
 	//////////////////////////////////////////////////////
 	game.UI.specList = world.specs.map(game.UI.generateSpecLine);
@@ -137,6 +147,31 @@ content.gameCycles.main = function() {
 		Inferno.createElement('div', {className:'t3'}, game.UI.specList)
 	);
 	Inferno.render(game.UI.specsContainer, document.getElementById("specialists").getElementsByClassName('cc')[0]);
+	
+	
+	//////////////////////////////////////////////////////
+	//					Окно городов		
+	//////////////////////////////////////////////////////
+	game.UI.cityList = [];
+	for (city in world.cities) {
+		game.UI.cityList.push(
+			Inferno.createElement('div', {className:'t2'+(game.UI.selectedMinistry == city?' sel':''), onClick:function() {
+					game.UI.selectedCity = city;
+				}},
+				Inferno.createElement('div', {className:'t'}, 
+					Inferno.createElement('div', {className:'report', style:'background-position:'+(-100*(world.cities[city].notifyLevel+1))+'%'}, null) 
+				),
+				Inferno.createElement('div', {className:'t'}, content.cities[city].name),
+				Inferno.createElement('div', {className:'t'}, 
+					Inferno.createElement('div', {className:'home', style:'background-position:'+(-100*(world.cities[city].notifyLevel+1))+'%'}, null) 
+				)
+			)
+		);
+	}
+	game.UI.cityContainer = Inferno.createElement('div', {className:'table r ux'}, 
+		Inferno.createElement('div', {className:'t3'}, game.UI.cityList)
+	);
+	Inferno.render(game.UI.cityContainer, document.getElementById("equestria").getElementsByClassName('p14part')[0]);
 	
 	//////////////////////////////////////////////////////
 	//					Окно министерств		
@@ -171,12 +206,6 @@ content.gameCycles.main = function() {
 					Inferno.createElement('div', {className:'line nm'}, 
 						Inferno.createElement('div', {className:'d'},l_min.info.name)
 					),
-					(!l_min.isEnemy?Inferno.createElement('div', {className:'line linebar'}, 
-						Inferno.createElement('div', {className:'p',style:'width:'+l_min.stats.ratio+'%'}, null),
-						Inferno.createElement('div', {className:'d'}, strings.UI.ratio,
-							Inferno.createElement('span', {className:'c'}, l_min.stats.ratio)
-						)
-					):null),
 					(!(l_min.isEnemy || l_min.id == world.playerMinistry)?Inferno.createElement('div', {className:'line linebar'}, 
 						Inferno.createElement('div', {className:'p',style:'width:'+l_min.stats.loyalty+'%'}, null),
 						Inferno.createElement('div', {className:'d'}, strings.UI.loyalty,
@@ -468,6 +497,7 @@ content.gameCycles.main = function() {
 	}
 	Inferno.render(game.UI.specProfile, document.getElementById("specinfo").getElementsByClassName('cc')[0]);
 };
+
 function m_init() {
 	for (let i=0; i<document.querySelectorAll('#top .ico1').length; i++) {
 		if (i!=document.querySelectorAll('#top .ico1').length-1) document.querySelectorAll('#top .ico1')[i].addEventListener('click', function() {utils.changeSpeed(i)});

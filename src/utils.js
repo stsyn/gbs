@@ -121,6 +121,7 @@ var utils = {
 			else if (world[target][id[i]].notifyLevel>level) world[target][id[i]].notifyLevel = level;
 		}
 		if (local) setTimeout(function() {game.UI.tryReadMessages(game.UI.currentSpec)}, 3000);
+		game.UI.writeNotifies();
 	},
 	
 	getMessage(id) {
@@ -309,20 +310,15 @@ var utils = {
 		
 	},
 	
-	closePopup(popup) {
-		game.UI.popups.pop();
-		if (game.UI.popups.length == 0) utils.changeSpeed(game.UI.tspeed);
-		let e = document.getElementById("popup_"+popup);
+	closePopup() {
+		utils.changeSpeed(game.UI.tspeed);
+		let e = document.getElementById("popup");
 		e.parentNode.removeChild(e);
 	},
 	
 	callPopup(popup) {
-		if (game.UI.popups.length == 0) {
-			game.UI.tspeed = document.querySelectorAll('#top .ico1').length-world.currentSpeed-1;
-			utils.changeSpeed(3);
-		}
-		popup.num = game.UI.popups.length;
-		game.UI.popups.push(popup.id);
+		game.UI.tspeed = document.querySelectorAll('#top .ico1').length-world.currentSpeed-1;
+		utils.changeSpeed(3);
 		let b;
 		if (popup.buttons!=undefined && popup.buttons.length > 0) {
 			b = popup.buttons.map(function (b) {
@@ -332,7 +328,7 @@ var utils = {
 			});
 		}
 		let z = document.createElement('div');
-		z.id = 'popup_'+popup.id;
+		z.id = 'popup';
 		z.className = 'pu d';
 		document.getElementById('windows').appendChild(z);
 		let z1 = document.createElement('div');
@@ -594,6 +590,34 @@ var utils = {
 		});
 		if (working>=task.minWorkers && !workO.hasStarted) utils.startWork(task, workO);
 	},
+	
+	
+	normalCityTick(city) {
+		/*
+			Oh, you expected something usefull here? 
+			But hey, what city should do every day? That it, nothing.
+		*/
+	},
+	
+	newDayTick() {
+		for (city in world.cities) {
+			content.cities[city].tick(world.cities[city]);
+		}
+	},
+	
+	getCityStatSum(city) {return city.attributes.techPart+city.attributes.militaryPart+city.attributes.industrialPart},
+	
+	getCityMilitary(city) {return city.attributes.militaryPart/utils.getCityStatSum(city)},
+	
+	getCityTech(city) {return city.attributes.techPart/utils.getCityStatSum(city)},
+	
+	getCityIndustrial(city) {return city.attributes.industrialPart/utils.getCityStatSum(city)},
+	
+	getCityActualMilitary(city) {return getCityMilitary(city)*city.attributes.militaryMult*city.attributes.ponyCount},
+	
+	getCityActualTech(city) {return getCityTech(city)*city.attributes.techMult*city.attributes.ponyCount},
+	
+	getCityActualIndustrial(city) {return getCityIndustrial(city)*city.attributes.industrialMult*city.attributes.ponyCount},
 	
 	rgb2hsv(color) {
 		// modified https://stackoverflow.com/a/8023734

@@ -29,8 +29,7 @@ class city {
 		this.messages = [];
 		this.notifyLevel = -1;
 		
-		this.counter = 0;
-		
+		this.attributes = {};
 		this.attributes.ponyCount = template.attributesStatic.ponyCountMin;
 		this.attributes.techPart = template.attributesStatic.techPart;
 		this.attributes.militaryPart = template.attributesStatic.militaryPart;
