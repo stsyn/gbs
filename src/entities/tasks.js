@@ -1,9 +1,9 @@
 'use strict';
 class work {
-	constructor(taskId, specs, location, object, gottenId) {
+	constructor(taskId, specs, location, object, gottenId, startInterval) {
 		this.value = 0;											//доля выполнения
 		this.target = content.works[taskId].target;				//цель в количестве
-		this.timeBeforeUpdate = content.works[taskId].updateInterval;		//время до обновления
+		this.timeBeforeUpdate = startInterval;					//время до обновления
 		this.timeElapsed = 0;									//прошло времени
 		this.workers = specs;								
 		this.location = location;
@@ -13,6 +13,7 @@ class work {
 		this.status = '';
 		this.hasStarted = false;
 		this.hasStartedPerSpec = [];
+		this.data = {};
 	}
 }
 

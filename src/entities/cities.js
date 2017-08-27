@@ -31,6 +31,7 @@ class city {
 		
 		this.attributes = {};
 		this.attributes.ponyCount = template.attributesStatic.ponyCountMin;
+		this.attributes.ponyCountMax = template.attributesStatic.ponyCountMax;
 		this.attributes.techPart = template.attributesStatic.techPart;
 		this.attributes.militaryPart = template.attributesStatic.militaryPart;
 		this.attributes.industrialPart = template.attributesStatic.industrialPart;
@@ -38,5 +39,9 @@ class city {
 		this.attributes.techMult = template.attributesStatic.techMult;
 		this.attributes.militaryMult = template.attributesStatic.militaryMult;
 		this.attributes.industrialMult = template.attributesStatic.industrialMult;
+		
+		if (template.ministriesPart == undefined) this.ministriesPart = {};
+		else this.ministriesPart = template.ministriesPart;
+		this.maxMinistriesPart = 0;
 	}
 }

@@ -21,6 +21,7 @@ class ministry {
 		this.stats.part = 0;
 		
 		this.specsTicks = [];
+		this.ministryTicks = [];
 		
 		this.messages = [];
 		this.notifyLevel = -1;

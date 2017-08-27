@@ -29,7 +29,7 @@ content.works.w_studying = {
 		return {money:1000};
 	},
 	requiments:function(spec) {
-		return parseInt(33.333*(3-utils.getLevel(spec)));
+		return parseInt(-40+60*(3-utils.getLevel(spec)));
 	},
 	whenStart:function(taskId) {return 0},
 	whenStartPerSpec:function(task) {return 0},
@@ -58,6 +58,10 @@ content.works.w_intStudying = {
 	onlyOne:false,
 	updateInterval:utils.time2ms({date:2}),
 	
+	data:{
+		failString:'В связи с неуспеваемостью в дальнейшем обучении было отказано.'
+	},
+	
 	calcCost:function(spec, ministry, location) {
 		return {money:parseInt(1000*(50-world.ministries.MAS.stats.part)*(1.33-utils.getIntellect(spec)))};
 	},
@@ -78,7 +82,7 @@ content.works.w_intStudying = {
 	whenStoppedPerSpec:function(taskId) {return 0;},
 	update:function(t) {return 0;},
 	updatePerSpec:function(t, spec) {
-		if (Math.random()*Math.random()*Math.random()*0.4 < utils.getIntellect(spec)) {
+		if (Math.random()*Math.random()*Math.random()*0.4 > utils.getIntellect(spec)) {
 			utils.failTask(t);
 			return;
 		}
@@ -91,7 +95,9 @@ content.works.w_intStudying = {
 		}
 		t.value++;
 	},
-	whenFailed:function(taskId) {return 0}
+	whenFailed:function(t) {
+		utils.addNotify('specs', world.specs[t.workers[0]].id, 1, this.data.failString);
+	}
 };
 
 content.works.w_endStudying = {
@@ -106,10 +112,16 @@ content.works.w_endStudying = {
 	onlyOne:false,
 	updateInterval:utils.time2ms({date:2}),
 	
+	data:{
+		failString:'Освобожден от занятий по состоянию здоровья.',
+		deadString:'Погиб в результате несчастного случая на тренировках.'
+	},
+	
 	calcCost:function(spec, ministry, location) {
 		return {money:parseInt(1000*(50-world.ministries.MoA.stats.part)*(1.33-utils.getEndurance(spec)))};
 	},
 	requiments:function(spec) {
+		if (spec.attributes.health/spec.attributes.maxHealth <= 0.20) return -1;
 		if (utils.getLevel(spec) < 2) return -1;
 		let c = (utils.getEndurance(spec)<.25?
 		utils.getEndurance(spec)*4:
@@ -118,7 +130,9 @@ content.works.w_endStudying = {
 		return parseInt(33.333*(8-utils.getLevel(spec))*c);
 	},
 	whenStart:function(task) {return 0},
-	whenStartPerSpec:function(task) {return 0},
+	whenStartPerSpec:function(task) {
+		task.data.cost = this.calcCost(world.specs[task.workers[0]]);
+	},
 	whenComplete:function(t) {
 		world.specs[t.workers[0]].stats.experience+=500*utils.getEndurance(world.specs[t.workers[0]]);
 	},
@@ -126,9 +140,10 @@ content.works.w_endStudying = {
 	whenStoppedPerSpec:function(taskId) {return 0;},
 	update:function(t) {return 0;},
 	updatePerSpec:function(t, spec) {
-		if (Math.random()*Math.random()*Math.random()*0.4 < utils.getEndurance(spec)) {
+		t.value++;
+		if (Math.random()*Math.random()*Math.random()*0.4 > utils.getEndurance(spec)) {
 			spec.attributes.health -= parseInt(Math.random()*Math.random()*10);
-			if (spec.attributes.health<=0) return;
+			if (spec.attributes.health/spec.attributes.maxHealth<=0.20) utils.failTask(t);
 		}
 		t.effectiency = this.requiments(spec);
 		spec.stats.experience+=10;
@@ -137,9 +152,13 @@ content.works.w_endStudying = {
 				spec.stats.endurance++;
 			}
 		}
-		t.value++;
 	},
-	whenFailed:function(taskId) {return 0}
+	whenFailed:function(t) {
+		if (world.specs[t.workers[0]].attributes.health > 0) {
+			utils.addNotify('specs', world.specs[t.workers[0]].id, 1, this.data.failString);
+			world.ministries[world.specs[t.workers[0]].ministry].resources.money.value += t.data.cost/2*t.value/t.target;
+		}
+	}
 };
 
 content.works.w_chrStudying = {
@@ -174,9 +193,8 @@ content.works.w_chrStudying = {
 	whenStoppedPerSpec:function(taskId) {return 0;},
 	update:function(t) {return 0;},
 	updatePerSpec:function(t, spec) {
-		if (Math.random()*Math.random()*Math.random()*0.4 < utils.getCharisma(spec)) {
-			/*spec.attributes.health -= parseInt(Math.random() * 10);
-			if (spec.attributes.health<=0) return;*/
+		if (Math.random()*Math.random()*Math.random()*0.4 > utils.getCharisma(spec)) {
+			world.ministries.MI.attributes.loyalty -= 2;
 		}
 		t.effectiency = this.requiments(spec);
 		spec.stats.experience+=10;
@@ -187,7 +205,9 @@ content.works.w_chrStudying = {
 		}
 		t.value++;
 	},
-	whenFailed:function(taskId) {return 0}
+	whenFailed:function(taskId) {
+		utils.addNotify('specs', world.specs[t.workers[0]].id, 1, this.data.failString.replace('%spec%', world.specs[t.workers[0]].stats.name));
+	}
 };
 
 function m_init() {

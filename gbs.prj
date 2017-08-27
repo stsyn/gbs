@@ -21,6 +21,7 @@
                 <File name="src\content\perks.js" />
                 <File name="src\content\tasks.js" />
                 <File name="src\content\cities.js" />
+                <File name="src\content\portraits.js" />
             </Folder>
             <File name="src\fontload.js" />
             <File name="src\loader.js" />

@@ -1,4 +1,18 @@
 "use strict";
+content.perks.c.p_gb_sys = {
+    id:'p_gb_sys',
+    name:'',
+    description:'',
+    secrecy:0,
+    whenGet:function(spec) {
+		spec.counters.main = consts.gameSpeed[2];
+		spec.shadow.loyaltyBonus = 100000;
+		spec.shadow.satisfactionBonus = -100000;
+		spec.attributes.payout = 0;},
+    onTask:function(spec) {return 0;},
+    onIdle:function(spec) {return 0;}
+};
+
 content.perks.c.p_hnst = {
     id:'p_hnst',
     name:'Честный',

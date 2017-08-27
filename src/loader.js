@@ -63,7 +63,7 @@ function init() {
 		def:['src/zero.js','src/entities/ministries.js','src/entities/cities.js','src/entities/messages.js','src/entities/world.js','src/entities/perks.js','src/entities/specs.js','src/entities/tasks.js', 'src/player.js', 'src/game.js']
 	}
 	var contentpacks = {
-		def:['src/content/specs.js','src/content/cities.js','src/content/perks.js','src/content/tasks.js']
+		def:['src/content/portraits.js','src/content/specs.js','src/content/cities.js','src/content/perks.js','src/content/tasks.js']
 	}
 	var currentCompilation = conf.engine;
 	var currentPack = conf.content;

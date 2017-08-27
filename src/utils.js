@@ -1,16 +1,21 @@
 "use strict";
 function consts_proto() {
-	this.baseSpeed = 48;
+	this.baseSpeed = 60;	//default 48
 	this.fps = 30;
-	this.gameSpeed = [0, this.baseSpeed/3, this.baseSpeed, this.baseSpeed*4] //per second
+	this.gameSpeed = [0, this.baseSpeed/3, this.baseSpeed, this.baseSpeed*4, this.baseSpeed*40] //per second
 	this.specUpdateInterval = 12*60;
 	this.sleepOverWork = 4;
 	this.workOverflow = 6;
 	this.maxNotifies = 50;
+	this.workCheckInterval = 60;
+	
+	//не отображается; известно только имя, класс и внешность; известны характеристики; местоположение и здоровье; текущие задания
+	this.visibility = [97,93,85,60,40];
 	
 	this.nextLevel = [200,600,1600,3200,6200,10600,18000,28400,45000]; //+200 +400 +600+400 +800+800 +1000+1200+800 +1200+1600+1600 +1400+2000+2400+1600 +1600+2400+3200+3200 +1800+2800+4000+4800+3200
 	this.maxLevel = this.nextLevel.length;
 	this.ministries = ['OIA','MAS','MI','MoP','MoA','MWT','MoM','Z','EQ'];
+	this.actualMinistries = ['MAS','MI','MoP','MoA','MWT','MoM'];
 	this.species = ['earthpony', 'unicorn', 'pegasus', 'alicorn', 'zebra'];
 	this.speciesNameGenerFunction = ['generateName', 'generateName', 'generateName', 'generateName', 'generateZebraName']
 	this.gender = ['r', 'm', 'f', 'u']
@@ -243,6 +248,23 @@ var utils = {
 		spec.stats[stats[t]] = sum;
 	},
 	
+	generatePortrait(spec, cl) {
+		//returns Inferno virtual element
+		let p = spec.stats.portrait;
+		let portrait = content.portraits[p.id];
+		let mirror = p.mirrored && portrait.allowMirror;
+		let svg = portrait.order.map(function(e) {
+			let fillColor = ((portrait.parts[e].color!='field') ? p[portrait.parts[e].color] : p[portrait.parts[e].colorField]);
+			let u = ((portrait.parts[e].value!='field')?portrait.parts[e].value:p[portrait.parts[e].field]);
+			if (u>portrait.parts[e].content.length) u = portrait.parts[e].content.length-1;
+			let content = portrait.parts[e].content[u];
+			return Inferno.createElement('path',{fill:fillColor, d:content});
+		});
+		return Inferno.createElement('svg', {viewBox:'0 0 '+portrait.resolution+' '+portrait.resolution, className:cl, transform:'scale('+(mirror?'-1':'1')+',1)'},
+			svg
+		);
+	},
+	
 	addPerk(spec, perkName) {
 		let perk = content.perks.c[perkName];
 		if (perk == undefined) {
@@ -292,6 +314,36 @@ var utils = {
 				content.perks.c[content.perks.perkReplPool[x].initators[y]].repList.push(y);
 			}
 		}
+	},
+	
+	deadSpec(spec) {
+		if (spec.health>0) return;
+		if (spec.ministry == 'OIA') {
+			utils.callPopup({
+				text:(strings.UI.messages.deadSpec.replace('%spec%',spec.stats.name))+'\n('+')',
+				buttons:[{
+					text: (game.player.resources.money.value>=3000?strings.UI.messages.deadSpecFullCompensation:strings.UI.messages.notEnoughMoney),
+					callback: (game.player.resources.money.value<3000?function(){}:function() {
+						game.player.resources.money.value -= 3000;
+						utils.closePopup();
+					})
+				},{
+					text: (game.player.resources.money.value>=1500?strings.UI.messages.deadSpecHalfCompensation:strings.UI.messages.notEnoughMoney),
+					callback: (game.player.resources.money.value<1500?function(){}:function() {
+						game.player.resources.money.value -= 1500;
+						world.ministries.EQ.loyalty -= 5;
+						utils.closePopup();
+					})
+				},{
+					text: strings.UI.messages.cancel,
+					callback: function() {
+						world.ministries.EQ.loyalty -= 15;
+						utils.closePopup();
+					}
+				}]
+			});
+		}
+		utils.spec2ministry(spec.id, 'DDD');
 	},
 	
 	levelUp(spec) {
@@ -382,28 +434,80 @@ var utils = {
 	calcPayout(spec) {
 		let const1 = 1.2;
 		let const2 = 1.12;
-		let v = Math.max(this.getCharisma(spec),this.getIntellect(spec),this.getEndurance(spec));
+		let v = Math.max(utils.getCharisma(spec),utils.getIntellect(spec),utils.getEndurance(spec));
+		let t = spec.attributes.payout; 
 		spec.attributes.payout = parseInt(
-		100 * Math.pow(const1,1/(const2-v)) * (1+this.getLevel(spec)/6+Math.pow(spec.attributes.involvement, 1.5)/150));
+		100 * Math.pow(const1,1/(const2-v)) * (1+utils.getLevel(spec)/6+Math.pow(spec.attributes.involvement, 1.5)/150));
+		if (spec.attributes.payout/t < 0.95) spec.attributes.payout = parseInt(t*0.95);
 	},
 	
 	generateMaxHealth(spec) {
-		return parseInt(10+Math.sqrt(utils.getActualEndurance(spec))*spec.shadow.maxHealthMult/3);
+		return parseInt(10+Math.pow(utils.getActualEndurance(spec), 0.6)*spec.shadow.maxHealthMult/3);
+	},
+	
+	sortSpecList(ministry, specList, type) {
+		let sortType = {};
+		sortType.priority = function (a, b) {
+			let m = world.ministries[ministry];
+			if (m.owner == a) return -1;
+			if (m.priorities(world.specs[a]) > m.priorities(world.specs[b])) return -1;
+			return 1;
+		};
+		sortType.priorityOIA = function (a, b) {
+			let m = world.ministries[ministry];
+			if (m.owner == a.id) return -1;
+			if (m.priorities(a) > m.priorities(b)) return -1;
+			return 1;
+		};
+		sortType.name = function (a, b) {
+			let m = world.ministries[ministry];
+			if (m.owner == a) return -1;
+			if (world.specs[a].stats.name < world.specs[b].stats.name) return -1;
+			return 1;
+		};
+		sortType.nameOIA = function (a, b) {
+			let m = world.ministries[ministry];
+			if (m.owner == a.id) return -1;
+			if (a.stats.name < b.stats.name) return -1;
+			return 1;
+		};
+		specList.sort(sortType[type]);
 	},
 	
 	spec2ministry(id, ministry) {
-		world.specs[id].owner = ministry;
-		world.specs[id].ministry = ministry;
+		let spec = world.specs[id];
+		if (spec.ministry != undefined && spec.ministry != ministry) {
+			spec.attributes.secrecy = utils.getSpecSecrecy(spec);
+			for (let i=0; i<world.ministries[spec.ministry].specs.length; i++) {
+				if (world.ministries[spec.ministry].specs[i] == id) {
+					world.ministries[spec.ministry].specs.splice(i,1);
+					break;
+				}
+			}
+		}
+		if (world.ministries[ministry].owner != spec.id) spec.owner = ministry;
+		spec.ministry = ministry;
+		for (let i=0; i<world.ministries[ministry].specs.length; i++) if (world.ministries[ministry].specs[i] == id) return;
 		world.ministries[ministry].specs.push(id);
 	},
 	
 	OIAspecTick(spec) {
+		if (spec.internalId == 'GB') return;
+		
+		if (spec.attributes.secrecy>60) spec.attributes.secrecy--;
 		//перерасчет работы
-		if (spec.tasks.length != 0) spec.attributes.workbalance += m;
-		else spec.attributes.workbalance -= consts.sleepOverWork*m;
-		spec.attributes.payout = utils.calcPayout(spec);
+		if (spec.tasks.length != 0) {
+			spec.attributes.workbalance += 1;
+			if (spec.attributes.secrecy>25) spec.attributes.secrecy--;
+		}
+		else {
+			spec.attributes.workbalance -= consts.sleepOverWork*1;
+			if (spec.attributes.secrecy<60) spec.attributes.secrecy++;
+		}
+		
+		utils.calcPayout(spec);
 		if (spec.attributes.workbalance > consts.workOverflow*4) {
-			spec.attributes.health-=workHealthMult;
+			spec.attributes.health-=spec.shadow.workHealthMult;
 			spec.attributes.workbalance = consts.workOverflow*4;
 			spec.attributes.workSatisfaction--;
 		}
@@ -427,6 +531,15 @@ var utils = {
 	},
 	
 	specTick(spec) {
+		//только для Голденблада
+		if (spec.internalId == 'GB') {
+			spec.counters.main = parseInt(consts.gameSpeed[world.currentSpeed]);
+			if (world.currentSpeed == 1) spec.attributes.health-=0.05;
+			if (world.currentSpeed == 3 && spec.attributes.health < spec.attributes.maxHealth) spec.attributes.health+=0.01;
+			if (spec.stats.health<=0) utils.deadSpec(spec);
+			return;
+		}
+		
 		let m = 1/spec.counters.updateMult;
 		
 		if (spec.stats.experience >= consts.nextLevel[spec.stats.level]) utils.levelUp(spec);
@@ -443,6 +556,8 @@ var utils = {
 		for (let i=0; i<content.idlePerksGenerators.length; i++) content.idlePerksGenerators[i](world, spec);
 		
 		spec.counters.main = consts.specUpdateInterval;
+		
+		if (spec.attributes.health<=0) utils.deadSpec(spec);
 	},
 	
 	destroyWork(work, res) {
@@ -451,7 +566,8 @@ var utils = {
 		else if (res == 3) utils.addNotify('specs', work.workers, 0, strings.UI.messages.workFailed.replace('%work%', pat.name));
 			
 		for (let i=0; i<work.workers.length; i++) {
-			let s = world.specs[work.workers[i]].tasks;
+			let spec = world.specs[work.workers[i]]
+			let s = spec.tasks;
 			for (let j=0; j<s.length; j++) {
 				if (s[j] == work.internalId) {
 					s.splice(j, 1);
@@ -468,7 +584,7 @@ var utils = {
 	failTask(work) {
 		let pat = content.works[work.id]; 
 		pat.whenFailed(work);
-		destroyWork(work, 3);
+		utils.destroyWork(work, 3);
 	},
 	
 	stopTask(work, spec, reason) {
@@ -535,7 +651,11 @@ var utils = {
 				working++;
 			}
 		});
-		if (working>=pat.minWorkers && !work.hasStarted) utils.startWork(pat, work);
+		if (working>=pat.minWorkers && !work.hasStarted) {
+			utils.startWork(pat, work);
+			work.timeBeforeUpdate += pat.updateInterval;
+			return;
+		}
 		
 		//обновление работы
 		if (working>=pat.minWorkers) {
@@ -556,7 +676,10 @@ var utils = {
 		}
 		
 		//выполнение
-		if (work.value < work.target) work.timeBeforeUpdate += pat.updateInterval;
+		if (work.value < work.target) {
+			if (work.hasStarted) work.timeBeforeUpdate += pat.updateInterval;
+			else work.timeBeforeUpdate += consts.workCheckInterval;
+		}
 		else {
 			pat.whenComplete(work);
 			utils.destroyWork(work, 0);
@@ -564,21 +687,21 @@ var utils = {
 	},
 	
 	makePerkVisible(spec, perkId) {
-		//TODO add notification
+		utils.addNotify('specs', spec.id, 1, strings.UI.messages.perkFound.replace('%perk%', content.perks.c[spec.perks[perkId]].name));
 		spec.isPerkExplored[perkId] = true;
 	},
 	
 	startTask(task, spec, ministry, location) {
 		let i;
 		for (i=0; world.tasks[i]!=undefined; i++) 0;
-		world.tasks[i] = new work(task.id, spec, location, ministry, i);
+		world.tasks[i] = new work(task.id, spec, location, ministry, i, Math.pow(world.roadmap[world.homecity][location],0.75)*world.data.taskStartTimeout);
 		let workO = world.tasks[i];
 		for (let s=0; s<spec.length; s++) {
 			world.specs[spec[s]].tasks.push(i);
 			workO.hasStartedPerSpec[s] = false;
 		}
 		//task.whenStart(i);
-		
+		/*
 		let working = 0;
 		workO.workers.forEach(function (worker, i, a) {
 			if (task.requiments(world.specs[worker])<0) {
@@ -588,20 +711,81 @@ var utils = {
 				working++;
 			}
 		});
-		if (working>=task.minWorkers && !workO.hasStarted) utils.startWork(task, workO);
+		if (working>=task.minWorkers && !workO.hasStarted) utils.startWork(task, workO);*/
 	},
 	
+	
+	ownedByPlayer(spec) {
+		return (spec.owner == game.player.ministry.id || spec.ministry == game.player.ministry.id);
+	},
+	
+	getSpecSecrecy(spec) {
+		if (spec.ministry == undefined || spec.ministry == game.player.ministry.id) return spec.attributes.secrecy;
+		let i, m = world.ministries[spec.ministry];
+		for (i=0; i<m.specs.length; i++) if (m.specs[i] == spec.id) break;
+		if (m.owner == spec.id) i = 5;
+		let u = parseInt(m.stats.loyalty*2*(100-spec.attributes.secrecy)*(i+3)/1000-9);
+		if (u>100) u = 100;
+		if (u<0) u = 0;
+		return 100-u;
+	},
 	
 	normalCityTick(city) {
 		/*
 			Oh, you expected something usefull here? 
 			But hey, what city should do every day? That it, nothing.
 		*/
+		
+		/*
+			*Few weeks after*
+			
+			Well, I changed my mind. I should add resources and stuff.
+		*/
 	},
 	
 	newDayTick() {
-		for (city in world.cities) {
+		if (world.data.weekDay == 0) {
+			world.data.weekDay = 7;
+			game.player.resources.money.value += (world.data.specs<10?world.data.specs:10)*1000;
+			world.data.specs = game.player.ministry.specs.length-1;
+		}
+		world.data.weekDay--;
+		
+		let tpartSum = 0;
+		for (let i=0; i<consts.actualMinistries.length; i++) {
+			world.ministries[consts.actualMinistries[i]].stats.part = 0;
+			world.ministries[consts.actualMinistries[i]].stats.tpart = 1;
+			tpartSum += 1;
+		}
+		for (let city in world.cities) {
 			content.cities[city].tick(world.cities[city]);
+			for (let ministry in content.cities[city].ministriesPart) {
+				if (world.ministries[ministry] != undefined) {
+					world.ministries[ministry].stats.tpart += content.cities[city].ministriesPart[ministry];
+					tpartSum += content.cities[city].ministriesPart[ministry];
+				}
+			}
+		}
+		for (let i=0; i<consts.actualMinistries.length; i++) {
+			world.ministries[consts.actualMinistries[i]].stats.part = parseInt(100*world.ministries[consts.actualMinistries[i]].stats.tpart/tpartSum);
+		}
+		for (let ministry in world.ministries) {
+			for (let i=0; i<world.ministries[ministry].ministryTicks.length; i++) world.ministries[ministry].ministryTicks[i](world.ministries[ministry]);
+		}
+		
+	},
+	
+	ministryTick(m) {
+		m.stats.loyalty-=0.05;
+		if (m.specs.length < 8) {
+			if (m.stats.loyalty > -40+20*m.specs.length) m.stats.loyalty = 20*m.specs.length-40;
+		}
+		if (m.stats.part<11 && m.stats.loyalty>50) m.stats.loyalty -= 1;
+		if (m.stats.part<6) m.stats.loyalty -= 1;
+		if (m.stats.loyalty <= 0) {
+			//code for gameover?
+			//or it's gonna be unique?
+			//oh well, there is no gameover right now
 		}
 	},
 	
@@ -613,53 +797,40 @@ var utils = {
 	
 	getCityIndustrial(city) {return city.attributes.industrialPart/utils.getCityStatSum(city)},
 	
-	getCityActualMilitary(city) {return getCityMilitary(city)*city.attributes.militaryMult*city.attributes.ponyCount},
+	getCityActualMilitary(city) {return parseInt(utils.getCityMilitary(city)*city.attributes.militaryMult*city.attributes.ponyCount)},
 	
-	getCityActualTech(city) {return getCityTech(city)*city.attributes.techMult*city.attributes.ponyCount},
+	getCityActualTech(city) {return parseInt(utils.getCityTech(city)*city.attributes.techMult*city.attributes.ponyCount)},
 	
-	getCityActualIndustrial(city) {return getCityIndustrial(city)*city.attributes.industrialMult*city.attributes.ponyCount},
+	getCityActualIndustrial(city) {return parseInt(utils.getCityIndustrial(city)*city.attributes.industrialMult*city.attributes.ponyCount)},
 	
-	rgb2hsv(color) {
-		// modified https://stackoverflow.com/a/8023734
-		color = parseInt(color.substring(1), 16);
-		var rr, gg, bb,
-			r = (color / 65536) % 256,
-			g = (color / 256) % 256,
-			b = color % 256,
-			h, s,
-			v = Math.max(r, g, b),
-			diff = v - Math.min(r, g, b),
-			diffc = function(c){
-				return (v - c) / 6 / diff + 1 / 2;
-			};
-
-		if (diff == 0) {
-			h = s = 0;
-		} else {
-			s = diff / v;
-			rr = diffc(r);
-			gg = diffc(g);
-			bb = diffc(b);
-
-			if (r === v) {
-				h = bb - gg;
-			}else if (g === v) {
-				h = (1 / 3) + rr - bb;
-			}else if (b === v) {
-				h = (2 / 3) + gg - rr;
-			}
-			if (h < 0) {
-				h += 1;
-			}else if (h > 1) {
-				h -= 1;
-			}
+	hsv2rgb(h, s, v) {
+		let r, g, b, i, f, p, q, t;
+		if (arguments.length === 1) {
+			s = h.s, v = h.v, h = h.h;
 		}
-		return {
-			h: Math.round(h * 360),
-			s: Math.round(s * 100),
-			v: Math.round(v * 100)
-		};
-}
+		if (h>1) h /= 360;
+		if (s>1) s /= 100;
+		if (v>1) v /= 100;
+		i = Math.floor(h * 6);
+		f = h * 6 - i;
+		p = v * (1 - s);
+		q = v * (1 - f * s);
+		t = v * (1 - (1 - f) * s);
+		switch (i % 6) {
+			case 0: r = v, g = t, b = p; break;
+			case 1: r = q, g = v, b = p; break;
+			case 2: r = p, g = v, b = t; break;
+			case 3: r = p, g = q, b = v; break;
+			case 4: r = t, g = p, b = v; break;
+			case 5: r = v, g = p, b = q; break;
+		}
+		r = Math.round(r * 255);
+		g = Math.round(g * 255);
+		b = Math.round(b * 255);
+		let st = ((r << 16)+(g << 8)+b).toString(16);
+		while (st.length<6) st = '0'+st;
+		return '#'+st;
+	}
 };
 function m_init() {
 	return 0;

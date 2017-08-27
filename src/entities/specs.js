@@ -1,12 +1,13 @@
 "use strict";
 class spec {
 	constructor(spec = {
-		stats:{name:'',charisma:0,intellect:0,endurance:0,level:-1,experience:undefined,gender:0,specie:-1,
-			portrait:{bodyColor:'',bodyUrl:'',maneColor:'',maneUrl:'',url:''}},
+		stats:{name:'',charisma:0,intellect:0,endurance:0,level:undefined,experience:undefined,gender:0,specie:undefined,
+			portrait:{url:''}},
 		attributes:{payout:undefined,maxHealth:0,involvement:0,payoutSatisfaction:0,workSatisfaction:90,worktypeSatisfaction:50,workbalance:0,secrecy:100},
 		ministry:null,owner:null,location:null,perks:null,isPerkExplored:[],tasks:[],messages:[],notifyLevel:null
 	}) {
 		this.id = world.specs.length;
+		this.internalId = spec.id;
 		this.shadow = {};
 		this.shadow.charismaMult = 1;
 		this.shadow.intellectMult = 1;
@@ -36,9 +37,16 @@ class spec {
 		this.messages = [];
 		this.notifyLevel = -1;
 		
+		this.counters = {};
+		this.counters.updateMult = 1;
+		this.counters.main = consts.specUpdateInterval;
+		
+		if (spec.stats == undefined) spec.stats = {};
+		if (spec.stats.portrait == undefined) spec.stats.portrait = {};
+		if (spec.attributes == undefined) spec.attributes = {};
+		
 		this.stats = spec.stats;
 		this.attributes = spec.attributes;
-		if (spec.id != undefined) world.idSpec.id = world.specs.length;
 		if (this.attributes == undefined) this.attributes = {};
 		if (this.attributes.loyalty == undefined) this.attributes.loyalty=50;
 		if (this.attributes.involvement == undefined) this.attributes.involvement=0;
@@ -55,17 +63,15 @@ class spec {
 		this.isPerkExplored = spec.isPerkExplored;
 		this.tasks = (spec.tasks!=undefined)?spec.tasks:[];
 		
-		if (this.stats.specie == -1) this.stats.specie = parseInt(Math.random()*3);
+		if (this.stats.specie == undefined) this.stats.specie = parseInt(Math.random()*consts.species.length);
         
-		if (this.stats.portrait.bodyColor.length == 7) this.stats.portrait.bodyHSV = utils.rgb2hsv(this.stats.portrait.bodyColor);
-		else {
+		if (this.stats.portrait.bodyColor == undefined || this.stats.portrait.bodyColor.length != 7) {
 			this.stats.portrait.bodyHSV = {};
 			this.stats.portrait.bodyHSV.h = parseInt(Math.random() * 360);
 			this.stats.portrait.bodyHSV.s = parseInt(Math.random() * 100);
 			this.stats.portrait.bodyHSV.v = parseInt((1-Math.random()*Math.random()) * 50);
 		}
-		if (this.stats.portrait.maneColor.length == 7) this.stats.portrait.maneHSV = utils.rgb2hsv(this.stats.portrait.maneColor);
-		else {
+		if (this.stats.portrait.maneColor == undefined ||this.stats.portrait.maneColor.length != 7) {
 			this.stats.portrait.maneHSV = {};
 			let i = parseInt(Math.random()*4);
 			if (i == 0) 
@@ -90,10 +96,12 @@ class spec {
 			}
 			this.stats.portrait.maneHSV.s = this.stats.portrait.bodyHSV.s + parseInt(Math.random()*Math.random() * (100 - this.stats.portrait.bodyHSV.s));
 			this.stats.portrait.maneHSV.v = this.stats.portrait.bodyHSV.v + parseInt(Math.random()*Math.random() * (100 - this.stats.portrait.bodyHSV.v));
+			this.stats.portrait.bodyColor = utils.hsv2rgb(this.stats.portrait.bodyHSV);
+			this.stats.portrait.maneColor = utils.hsv2rgb(this.stats.portrait.maneHSV);
 		}
 		
 		if (this.stats.intellect+this.stats.endurance+this.stats.charisma != 300) utils.generateStats(this);
-		if (this.stats.level == -1) this.stats.level = parseInt(Math.random()*Math.random()*Math.random()*3);
+		if (this.stats.level == undefined) this.stats.level = parseInt(Math.random()*Math.random()*Math.random()*3);
 		
 		if (this.isPerkExplored == null || this.isPerkExplored.length != this.perks) this.isPerkExplored = [];
 		if (this.perks == null) utils.generatePerks(this);
@@ -108,7 +116,16 @@ class spec {
 			let t = utils[consts.speciesNameGenerFunction[this.stats.specie]](this);
 			this.stats.name = t.n;
 			this.stats.gender = t.g;
-			this.stats.portrait.url = 'res/portraits/new/1.png';	//TODO: still needs in updating
+			if (this.stats.gender == 0) this.stats.gender = parseInt(Math.random()*2+1);
+			let portrait = this.stats.portrait;
+			portrait.id = content.portraitsListing[this.stats.specie][parseInt(content.portraitsListing[this.stats.specie].length*Math.random())];
+			let currentPortrait = content.portraits[portrait.id];
+			portrait.gender = this.stats.gender;
+			portrait.wings = (this.stats.specie == 2 || this.stats.specie == 3)?1:0;
+			portrait.horn = (this.stats.specie == 1 || this.stats.specie == 3)?1:0;
+			portrait.mane = parseInt(currentPortrait.parts.mane.content.length*Math.random());
+			portrait.mirrored = (Math.random()<0.5);
+			
 		}
 		if (this.stats.gender == 0) this.stats.gender = parseInt(Math.random()*2+1);
 		
@@ -123,9 +140,6 @@ class spec {
 			else this.stats.experience = 0;
 		}
 		
-		this.counters = {};
-		this.counters.updateMult = 1;
-		this.counters.main = consts.specUpdateInterval;
 	}
 }
 function m_init() {return 0}

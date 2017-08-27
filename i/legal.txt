@@ -9,8 +9,19 @@ https://infernojs.org/
 
 ------
 
-Временные аватары М6
+Благодарности:
+
+	derpibooru (и JoeyH3 в частности) за предоставленные вектора генерируемых аватар.
+	
+	crash9902 (https://crash9902.deviantart.com/) за дополнительные генерируемые аватары
+
+------
+
+Аватары М6
 http://csimadmax.deviantart.com/art/fallout-ministry-mares-296360211
+
+Аватар Голденблада
+https://setharu.deviantart.com/art/FoE-PH-Goldenblood-680968082
 
 Иконки министерств
 http://tomcullen.deviantart.com/art/Fallout-Equestria-Ministry-Emblems-340985607
@@ -20,5 +31,12 @@ http://milekhippy.deviantart.com/art/FEQ-Ministry-Logo-s-459744668
 
 Логотип DMD
 http://aaronmk.deviantart.com/art/Office-of-Interministry-Affairs-344619717
+
+Флаг Эквестрии
+https://qtmarx.deviantart.com/art/Equestrian-flag-330722820
+https://www.redbubble.com/people/nimaru/works/10039712-celestia-luna-yin-yang-subtle-brony-symbol?p=greeting-card
+
+Флаг Зебрики
+https://the-zecora-fanclub.deviantart.com/art/Zecora-Cutie-Mark-244376734
 
 Информацию о музыке можно посмотреть, нажав на название трека.

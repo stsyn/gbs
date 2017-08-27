@@ -20,6 +20,7 @@ content.technologies = {};
 content.news = {};
 content.presetedSpecs = {};
 content.cities = {};
+content.roadmap = {};
 content.gameCycles = {};
 content.gameListeners = [];
 content.extendedPerksGenerators = [];
@@ -28,17 +29,21 @@ content.worldCreators = [];
 content.gameCreators = [];
 content.gameLaunchers = [];
 
-var player = {};
+content.portraits = {};
+content.portraitsListing = [];
+
+
+var game = {};
+game.UI = {};
+game.player = {};
+game.player.resources = {};
 /*
 Only for linkage!
 
 Fields:
 	.ministry
-	.cities
 	.specs[]
 	.resources[type].value
 */
 
-var game = {};
-game.UI = {};
 function m_init() {return 0}

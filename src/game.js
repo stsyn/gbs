@@ -3,14 +3,28 @@ content.gameLaunchers.push(function() {
 	game.UI.currentSpec = world.specs[0];
 	utils.changeSpeed(3);
 	setTimeout(function() {if (world.currentSpeed == 0) utils.changeSpeed(1)}, 3000);
+	
+	game.player.ministry = world.ministries.OIA;
+	game.player.resources.money = world.ministries.OIA.money;
+	utils.newDayTick();
 });
 
 content.gameCreators.push(function() {
 	utils.preparePerks();
+	
 	game.UI.popups = [];
-	game.UI.bottomOffset = 0;
 	game.UI.selectedMinistry = 'OIA';
-	game.UI.bottomSize = 10;
+	game.UI.selectedCity = 'canterlot';
+	game.UI.bottomRenderCounter = 0;
+	game.UI.bottomSelectionMode = 'view';
+	
+	game.UI.bottomSelection = {};
+	game.UI.bottomSelection.view = function (spec) {
+		game.UI.currentSpec = spec;
+		spec.messages.forEach(function (m,i,a){utils.getMessage(m).read = true});
+		spec.notifyLevel = -1;
+		document.getElementById('specinfo').classList.add('d');
+	};
 	
 	game.UI.tryReadMessages = function (spec) {
 		if (spec != game.UI.currentSpec) return;
@@ -19,7 +33,8 @@ content.gameCreators.push(function() {
 	};
 	
 	game.UI.generateSpecLine = function (spec) {
-		return Inferno.createElement('div', {className:'t2'+(game.UI.currentSpec == spec?' sel':''), onClick:function() {
+		if (utils.getSpecSecrecy(spec)>consts.visibility[0]) return;
+		return Inferno.createElement('div', {className:'t2'+((game.UI.currentSpec == spec)&&(document.getElementById("specinfo").classList.contains('d'))?' sel':''), onClick:function() {
 				game.UI.currentSpec = spec;
 				spec.messages.forEach(function (m,i,a){utils.getMessage(m).read = true});
 				spec.notifyLevel = -1;
@@ -29,15 +44,15 @@ content.gameCreators.push(function() {
 				Inferno.createElement('div', {className:'report', style:'background-position: '+(-100*(spec.notifyLevel+1))+'% 0'}, null)
 			),
 			Inferno.createElement('div', {className:'t'}, 
-				Inferno.createElement('div', {className:'level', style:'background-position:'+(spec.stats.level*(-100))+'% 0'}, null)
+				(utils.getSpecSecrecy(spec)<93)?Inferno.createElement('div', {className:'level', style:'background-position:'+(spec.stats.level*(-100))+'% 0'}, null):null
 			),
-			Inferno.createElement('div', {className:'t'}, spec.stats.name),
-			Inferno.createElement('div', {className:'t c'}, utils.getClassName(spec)),
+			Inferno.createElement('div', {className:'t'}, (utils.getSpecSecrecy(spec)>=93)?'???':spec.stats.name),
+			Inferno.createElement('div', {className:'t c'}, (utils.getSpecSecrecy(spec)>=93)?'???':utils.getClassName(spec)),
 			Inferno.createElement('div', {className:'t'}, 
-				Inferno.createElement('div', {className:'info'}, 
+				(utils.getSpecSecrecy(spec)<consts.visibility[1]?Inferno.createElement('div', {className:'info'}, 
 					Inferno.createElement('div', {className:'gender',style:'background-position:'+((spec.stats.gender-1)*(-100))+'% 0'}, null),
 					Inferno.createElement('div', {className:'race',style:'background-position:'+((spec.stats.specie)*(-100))+'% 0'}, null)
-				)
+				):null)
 			),
 			Inferno.createElement('div', {className:'t'}, 
 				Inferno.createElement('div', {className:'ministry'}, 
@@ -45,7 +60,7 @@ content.gameCreators.push(function() {
 				) 
 			),
 			Inferno.createElement('div', {className:'t'}, 
-				Inferno.createElement('div', {className:'task', style:'background-image:url('+content.works[utils.getCurrentWork(spec).id].iconUrl+');background-position: '+(-content.works[utils.getCurrentWork(spec).id].iconOffset*100)+'% 0'}, ' ')
+				(utils.ownedByPlayer(spec)?Inferno.createElement('div', {className:'task', style:'background-image:url('+content.works[utils.getCurrentWork(spec).id].iconUrl+');background-position: '+(-content.works[utils.getCurrentWork(spec).id].iconOffset*100)+'% 0'}, ' '):null)
 			)
 		)
 	};
@@ -85,9 +100,6 @@ content.gameCreators.push(function() {
 
 content.gameCycles.main = function() {
 	setTimeout(content.gameCycles.main, 1000/consts.fps);
-	game.UI.currentBottomList = world.specs;
-	if (game.UI.bottomOffset<0) game.UI.bottomOffset = 0;
-	if (parseInt(game.UI.bottomOffset/game.UI.bottomSize)>parseInt((game.UI.currentBottomList.length-1)/game.UI.bottomSize)) game.UI.bottomOffset = parseInt((game.UI.currentBottomList.length-1)/game.UI.bottomSize)*game.UI.bottomSize;
 	playerStateUpdate();
 	document.querySelector('#top .c').innerHTML = utils.getTime(world.time);
 	let dtime = (consts.gameSpeed[world.currentSpeed])/consts.fps;
@@ -122,380 +134,494 @@ content.gameCycles.main = function() {
 	//////////////////////////////////////////////////////
 	//					Нижнее меню			
 	//////////////////////////////////////////////////////
-	game.UI.bottomList = game.UI.currentBottomList.map(function (spec) {
-		return Inferno.createElement('div', {className:'s'},
-			Inferno.createElement('img', {className:'p', src:spec.stats.portrait.url}, null),
-			Inferno.createElement('div', {className:'task', style:'background-image:url('+content.works[utils.getCurrentWork(spec).id].iconUrl+');background-position: '+(-content.works[utils.getCurrentWork(spec).id].iconOffset*100)+'% 0'}, ' '),
-			Inferno.createElement('div', {className:'level', style:'background-position:'+(spec.stats.level*(-100))+'% 0'}, null),
-			Inferno.createElement('div', {className:'report', style:'background-position: '+(-100*(spec.notifyLevel+1))+'% 0'}, null),
-			Inferno.createElement('div', {className:'n'}, spec.stats.name),
-			Inferno.createElement('div', {className:'c'}, utils.getClassName(spec)),
-			Inferno.createElement('div', {className:'stat'}, 
-				Inferno.createElement('div', {className:'progress', style:'width:'+100*spec.attributes.health/spec.attributes.maxHealth+'%'}, null),
-				Inferno.createElement('div', {className:'prof label'}, spec.attributes.health+'/'+spec.attributes.maxHealth)
+	if (game.UI.bottomRenderCounter <= 0) {
+		game.UI.bottomRenderCounter = 60;
+		game.player.specs = [];
+		for (let i=0; i<world.specs.length; i++) {
+			if (world.specs[i].ministry == 'OIA' || world.specs[i].owner == 'OIA')
+				game.player.specs.push(world.specs[i]);
+		}
+		utils.sortSpecList('OIA', game.player.specs, 'priorityOIA');
+		game.UI.bottomList = game.player.specs.map(function (spec) {
+			let image;
+			if (spec.stats.portrait.url != '' && spec.stats.portrait.url != undefined) image = Inferno.createElement('img', {className:'p', src:spec.stats.portrait.url}, null);
+			else image = content.portraits[spec.stats.portrait.id].func(spec, 'p color');
+			return Inferno.createElement('div', {className:'s', onClick:(game.UI.bottomSelection[game.UI.bottomSelectionMode]!=undefined?function(){game.UI.bottomSelection[game.UI.bottomSelectionMode](spec)}:function(){return 0})},
+				image,
+				Inferno.createElement('div', {className:'task', style:'background-image:url('+content.works[utils.getCurrentWork(spec).id].iconUrl+');background-position: '+(-content.works[utils.getCurrentWork(spec).id].iconOffset*100)+'% 0'}, ' '),
+				Inferno.createElement('div', {className:'level', style:'background-position:'+(spec.stats.level*(-100))+'% 0'}, null),
+				Inferno.createElement('div', {className:'report', style:'background-position: '+(-100*(spec.notifyLevel+1))+'% 0'}, null),
+				Inferno.createElement('div', {className:'n'}, spec.stats.name),
+				Inferno.createElement('div', {className:'c'}, utils.getClassName(spec)),
+				Inferno.createElement('div', {className:'stat'}, 
+					Inferno.createElement('div', {className:'progress', style:'width:'+100*spec.attributes.health/spec.attributes.maxHealth+'%'}, null),
+					Inferno.createElement('div', {className:'prof label'}, parseInt(spec.attributes.health)+'/'+spec.attributes.maxHealth)
+				)
 			)
-		)
-	});
-	game.UI.bottomContainer = Inferno.createElement('div', {className:'container'}, game.UI.bottomList);
-	Inferno.render(game.UI.bottomContainer, document.getElementById("bottom"));
-	
+		});
+		game.UI.bottomContainer = Inferno.createElement('div', {className:'container'}, game.UI.bottomList);
+		Inferno.render(game.UI.bottomContainer, document.getElementById("bottom"));
+	}
+	game.UI.bottomRenderCounter--; 
 	//////////////////////////////////////////////////////
 	//					Окно специалистов		
 	//////////////////////////////////////////////////////
-	game.UI.specList = world.specs.map(game.UI.generateSpecLine);
-	game.UI.specsContainer = Inferno.createElement('div', {className:'table r ux'}, 
-		Inferno.createElement('div', {className:'t3'}, game.UI.specList)
-	);
-	Inferno.render(game.UI.specsContainer, document.getElementById("specialists").getElementsByClassName('cc')[0]);
 	
+	if (document.getElementById("specialists").classList.contains('d')) {
+		game.UI.specList = game.player.specs.map(game.UI.generateSpecLine);
+		game.UI.specsContainer = Inferno.createElement('div', {className:'table r ux'}, 
+			Inferno.createElement('div', {className:'t3'}, game.UI.specList)
+		);
+		Inferno.render(game.UI.specsContainer, document.getElementById("specialists").getElementsByClassName('cc')[0]);
+	}
 	
 	//////////////////////////////////////////////////////
 	//					Окно городов		
 	//////////////////////////////////////////////////////
-	game.UI.cityList = [];
-	for (city in world.cities) {
-		game.UI.cityList.push(
-			Inferno.createElement('div', {className:'t2'+(game.UI.selectedMinistry == city?' sel':''), onClick:function() {
-					game.UI.selectedCity = city;
-				}},
-				Inferno.createElement('div', {className:'t'}, 
-					Inferno.createElement('div', {className:'report', style:'background-position:'+(-100*(world.cities[city].notifyLevel+1))+'%'}, null) 
-				),
-				Inferno.createElement('div', {className:'t'}, content.cities[city].name),
-				Inferno.createElement('div', {className:'t'}, 
-					Inferno.createElement('div', {className:'home', style:'background-position:'+(-100*(world.cities[city].notifyLevel+1))+'%'}, null) 
+	
+	if (document.getElementById("equestria").classList.contains('d')) {
+		game.UI.cityList = [];
+		for (let city in world.cities) {
+			let x = city;
+			game.UI.cityList.push(
+				Inferno.createElement('div', {className:'t2'+(game.UI.selectedCity == city?' sel':''), onClick:function() {
+						game.UI.selectedCity = x;
+					}},
+					Inferno.createElement('div', {className:'t', style:'width: 8%;text-align: center'}, 
+						Inferno.createElement('div', {className:'ministry'}, 
+							Inferno.createElement('div', {style:'background-position:'+(-100*world.ministries[world.cities[city].owner].info.iconOffset)+'%;background-image:url("'+world.ministries[world.cities[city].owner].info.iconUrl+'")'}, null)
+						) 
+					),
+					Inferno.createElement('div', {className:'t'}, 
+						Inferno.createElement('div', {className:'report', style:'background-position:'+(-100*(world.cities[city].notifyLevel+1))+'%'}, null) 
+					),
+					Inferno.createElement('div', {className:'t'}, content.cities[city].name),
+					Inferno.createElement('div', {className:'t'}, 
+						Inferno.createElement('div', {className:'home', style:'background-position:'+(0)+'%'}, null) 
+					)
+				)
+			);
+		}
+		game.UI.cityContainer = Inferno.createElement('div', {className:'table r ux'}, 
+			Inferno.createElement('div', {className:'t3'}, game.UI.cityList)
+		);
+		Inferno.render(game.UI.cityContainer, document.getElementById("equestria").getElementsByClassName('p14part')[0]);
+		
+		let l_city = world.cities[game.UI.selectedCity];
+		let c_city = content.cities[game.UI.selectedCity];
+		game.UI.specsInCity = world.specs.filter(function(spec) {
+			return (!(utils.getSpecSecrecy(spec)>=consts.visibility[3] && !utils.ownedByPlayer(spec)) && (spec.location == game.UI.selectedCity))
+		});
+		
+		game.UI.specsInCityList = game.UI.specsInCity.map(game.UI.generateSpecLine);
+		
+		game.UI.ministriesInCity = [];
+		for (let m in l_city.ministriesPart) game.UI.ministriesInCity.push(
+			Inferno.createElement('div', {className:'line linebar'}, 
+				Inferno.createElement('div', {className:'p',style:'width:'+parseInt(100*l_city.ministriesPart[m]/l_city.attributes.ponyCount)+'%'}, null),
+				Inferno.createElement('div', {className:'d'}, world.ministries[m].info.name,
+					Inferno.createElement('span', {className:'c'}, l_city.ministriesPart[m])
 				)
 			)
 		);
+		
+		game.UI.citySpecDivList = game.UI.specsInCity.map(game.UI.generateSpecLine);
+			{ 
+			game.UI.cityProfile = 
+				Inferno.createElement('div', {},
+					(l_city.owner=='EQ'?Inferno.createElement('div', {className:'pad sp_info'},
+						Inferno.createElement('div', {className:'line nm'}, 
+							Inferno.createElement('div', {className:'d'},c_city.name)
+						),
+						Inferno.createElement('div', {className:'line linebar'}, 
+							Inferno.createElement('div', {className:'p',style:'width:'+parseInt(100*l_city.attributes.ponyCount/l_city.attributes.ponyCountMax)+'%'}, null),
+							Inferno.createElement('div', {className:'d'}, strings.UI.ponyCount,
+								Inferno.createElement('span', {className:'c'}, l_city.attributes.ponyCount)
+							)
+						),
+						Inferno.createElement('div', {className:'line linebar'}, 
+							Inferno.createElement('div', {className:'p',style:'width:'+100*utils.getCityMilitary(l_city)+'%'}, null),
+							Inferno.createElement('div', {className:'d'}, strings.UI.militaryPower,
+								Inferno.createElement('span', {className:'c'}, utils.getCityActualMilitary(l_city))
+							)
+						),
+						Inferno.createElement('div', {className:'line linebar'}, 
+							Inferno.createElement('div', {className:'p',style:'width:'+100*utils.getCityIndustrial(l_city)+'%'}, null),
+							Inferno.createElement('div', {className:'d'}, strings.UI.industrialPower,
+								Inferno.createElement('span', {className:'c'}, utils.getCityActualIndustrial(l_city))
+							)
+						),
+						Inferno.createElement('div', {className:'line linebar'}, 
+							Inferno.createElement('div', {className:'p',style:'width:'+100*utils.getCityTech(l_city)+'%'}, null),
+							Inferno.createElement('div', {className:'d'}, strings.UI.techPower,
+								Inferno.createElement('span', {className:'c'}, utils.getCityActualTech(l_city))
+							)
+						)
+					):null),
+					Inferno.createElement('div', {className:'pad sp_inv'},
+						Inferno.createElement('div', {className:'table r ux'}, 
+							Inferno.createElement('div', {className:'t3'},game.UI.ministriesInCity)
+						)
+					),
+					Inferno.createElement('div', {className:'pad sp_inv'},
+						Inferno.createElement('div', {className:'table r ux'}, 
+							Inferno.createElement('div', {className:'t3'},game.UI.specsInCityList)
+						)
+					)
+				);
+			}
+		Inferno.render(game.UI.cityProfile, document.getElementById("equestria").getElementsByClassName('p34part')[0]);
 	}
-	game.UI.cityContainer = Inferno.createElement('div', {className:'table r ux'}, 
-		Inferno.createElement('div', {className:'t3'}, game.UI.cityList)
-	);
-	Inferno.render(game.UI.cityContainer, document.getElementById("equestria").getElementsByClassName('p14part')[0]);
+	
 	
 	//////////////////////////////////////////////////////
 	//					Окно министерств		
 	//////////////////////////////////////////////////////
-	game.UI.minsList = consts.ministries.map( function (m) {
-		m = world.ministries[m];
-		return Inferno.createElement('div', {className:'t2'+(game.UI.selectedMinistry == m.id?' sel':''), onClick:function() {
-				game.UI.selectedMinistry = m.id;
-			}},
-			Inferno.createElement('div', {className:'t'}, 
-				Inferno.createElement('div', {className:'ministry'}, 
-					Inferno.createElement('div', {style:'background-position:'+(-100*m.info.iconOffset)+'%;background-image:url("'+m.info.iconUrl+'")'}, null)
-				) 
-			),
-			Inferno.createElement('div', {className:'t'}, m.info.name)
-		)
-	});
-	game.UI.minsContainer = Inferno.createElement('div', {className:'table r ux'}, 
-		Inferno.createElement('div', {className:'t3'}, game.UI.minsList)
-	);
-	Inferno.render(game.UI.minsContainer, document.getElementById("ministries").getElementsByClassName('p14part')[0]);
 	
-	let l_min = world.ministries[game.UI.selectedMinistry];
-	game.UI.minSpecList = world.specs.filter(function (spec) {
-		return spec.ministry == l_min.id ||  spec.owner == l_min.id;
-	});
-	game.UI.minSpecDivList = game.UI.minSpecList.map(game.UI.generateSpecLine);
-	
-	{ game.UI.minProfile = 
-			Inferno.createElement('div', {},
-				Inferno.createElement('div', {className:'pad sp_top'},
-					Inferno.createElement('div', {className:'line nm'}, 
-						Inferno.createElement('div', {className:'d'},l_min.info.name)
-					),
-					(!(l_min.isEnemy || l_min.id == world.playerMinistry)?Inferno.createElement('div', {className:'line linebar'}, 
-						Inferno.createElement('div', {className:'p',style:'width:'+l_min.stats.loyalty+'%'}, null),
-						Inferno.createElement('div', {className:'d'}, strings.UI.loyalty,
-							Inferno.createElement('span', {className:'c'}, l_min.stats.loyalty)
-						)
-					):null),
-					(!(l_min.isCountry || l_min.stats.part == null)?Inferno.createElement('div', {className:'line linebar'}, 
-						Inferno.createElement('div', {className:'p',style:'width:'+l_min.stats.part+'%'}, null),
-						Inferno.createElement('div', {className:'d'}, strings.UI.part,
-							Inferno.createElement('span', {className:'c'}, l_min.stats.part)
-						)
-					):null),
-					(l_min.isCountry?Inferno.createElement('div', {className:'line linebar st_chr'}, 
-						Inferno.createElement('div', {className:'p',style:'width:'+l_min.stats.military+'%'}, null),
-						Inferno.createElement('div', {className:'d'}, strings.UI.military,
-							Inferno.createElement('span', {className:'c'}, l_min.stats.military)
-						)
-					):null),
-					(l_min.isCountry?Inferno.createElement('div', {className:'line linebar st_chr'}, 
-						Inferno.createElement('div', {className:'p',style:'width:'+l_min.stats.treat+'%'}, null),
-						Inferno.createElement('div', {className:'d'}, strings.UI.treat,
-							Inferno.createElement('span', {className:'c'}, l_min.stats.treat)
-						)
-					):null),
-					(l_min.id == world.playerMinistry?Inferno.createElement('div', {className:'line linebar st_chr'}, 
-						Inferno.createElement('div', {className:'p',style:'width:'+l_min.stats.money+'%'}, null),
-						Inferno.createElement('div', {className:'d'}, strings.UI.money,
-							Inferno.createElement('span', {className:'c'}, l_min.stats.money)
-						)
-					):null)
+	if (document.getElementById("ministries").classList.contains('d')) { 
+		game.UI.minsList = consts.ministries.map( function (m) {
+			m = world.ministries[m];
+			return Inferno.createElement('div', {className:'t2'+(game.UI.selectedMinistry == m.id?' sel':''), onClick:function() {
+					game.UI.selectedMinistry = m.id;
+				}},
+				Inferno.createElement('div', {className:'t', style:'width: 8%;text-align: center'}, 
+					Inferno.createElement('div', {className:'ministry'}, 
+						Inferno.createElement('div', {style:'background-position:'+(-100*m.info.iconOffset)+'%;background-image:url("'+m.info.iconUrl+'")'}, null)
+					) 
 				),
-				Inferno.createElement('div', {className:'pad sp_img'},
-					Inferno.createElement('img', {src:l_min.info.bigIconUrl}, null)
-				),
-				(!l_min.isEnemy?Inferno.createElement('div', {className:'pad sp_inv'},
-					Inferno.createElement('div', {className:'table r ux'}, 
-						Inferno.createElement('div', {className:'t3'},game.UI.minSpecDivList)
-						)
-					):null)/*,
-				Inferno.createElement('div', {className:'pad sp_info'},
-					Inferno.createElement('div', {className:'pad sp_half'}, 
-						(game.UI.specPerks.length == 0?strings.UI.noPerks:game.UI.specPerks)
-					),
-					Inferno.createElement('div', {className:'pad sp_half'},
-						l_notice
+				Inferno.createElement('div', {className:'t'}, m.info.name)
+			)
+		});
+		game.UI.minsContainer = Inferno.createElement('div', {className:'table r ux'}, 
+			Inferno.createElement('div', {className:'t3'}, game.UI.minsList)
+		);
+		Inferno.render(game.UI.minsContainer, document.getElementById("ministries").getElementsByClassName('p14part')[0]);
+		
+		let l_min = world.ministries[game.UI.selectedMinistry];
+		game.UI.minSpecList = l_min.specs.map(function (spec) {
+			return world.specs[spec];
+		});
+		game.UI.minSpecDivList = game.UI.minSpecList.map(game.UI.generateSpecLine);
+		
+		game.UI.resources = [];
+		if (l_min == game.player.ministry) {
+			for (let r in game.player.resources) {
+				game.UI.resources.push(Inferno.createElement('div', {className:'line linebar'}, 
+					Inferno.createElement('div', {className:'d'}, strings.resources[r],
+						Inferno.createElement('span', {className:'c'}, game.player.resources[r].value)
 					)
-				)*/
-			);
+				));
+			}
+		}
+		
+		{ game.UI.minProfile = 
+				Inferno.createElement('div', {},
+					Inferno.createElement('div', {className:'pad sp_top'},
+						Inferno.createElement('div', {className:'line nm'}, 
+							Inferno.createElement('div', {className:'d'},l_min.info.name)
+						),
+						(!(l_min.id == world.playerMinistry)?Inferno.createElement('div', {className:'line linebar'}, 
+							Inferno.createElement('div', {className:'p',style:'width:'+l_min.stats.loyalty+'%'}, null),
+							Inferno.createElement('div', {className:'d'}, strings.UI.loyalty,
+								Inferno.createElement('span', {className:'c'}, parseInt(l_min.stats.loyalty))
+							)
+						):null),
+						(!(l_min.isCountry || l_min.stats.part == null)?Inferno.createElement('div', {className:'line linebar'}, 
+							Inferno.createElement('div', {className:'p',style:'width:'+l_min.stats.part+'%'}, null),
+							Inferno.createElement('div', {className:'d'}, strings.UI.part,
+								Inferno.createElement('span', {className:'c'}, l_min.stats.part)
+							)
+						):null),
+						(!(l_min.isCountry || l_min.stats.part == null)?Inferno.createElement('div', {className:'line linebar'}, 
+							Inferno.createElement('div', {className:'d'}, strings.UI.tpart,
+								Inferno.createElement('span', {className:'c'}, l_min.stats.tpart)
+							)
+						):null),
+						(l_min.isCountry?Inferno.createElement('div', {className:'line linebar st_chr'}, 
+							Inferno.createElement('div', {className:'p',style:'width:'+l_min.stats.military+'%'}, null),
+							Inferno.createElement('div', {className:'d'}, strings.UI.military,
+								Inferno.createElement('span', {className:'c'}, l_min.stats.military)
+							)
+						):null),
+						(l_min.isCountry?Inferno.createElement('div', {className:'line linebar st_chr'}, 
+							Inferno.createElement('div', {className:'p',style:'width:'+l_min.stats.treat+'%'}, null),
+							Inferno.createElement('div', {className:'d'}, strings.UI.treat,
+								Inferno.createElement('span', {className:'c'}, l_min.stats.treat)
+							)
+						):null),
+						game.UI.resources
+					),
+					Inferno.createElement('div', {className:'pad sp_img'},
+						Inferno.createElement('img', {src:l_min.info.bigIconUrl}, null)
+					),
+					(!l_min.isEnemy?Inferno.createElement('div', {className:'pad sp_inv'},
+						Inferno.createElement('div', {className:'table r ux'}, 
+							Inferno.createElement('div', {className:'t3'},game.UI.minSpecDivList)
+							)
+						):null)/*,
+					Inferno.createElement('div', {className:'pad sp_info'},
+						Inferno.createElement('div', {className:'pad sp_half'}, 
+							(game.UI.specPerks.length == 0?strings.UI.noPerks:game.UI.specPerks)
+						),
+						Inferno.createElement('div', {className:'pad sp_half'},
+							l_notice
+						)
+					)*/
+				);
+		}
+		Inferno.render(game.UI.minProfile, document.getElementById("ministries").getElementsByClassName('p34part')[0]);
 	}
-	Inferno.render(game.UI.minProfile, document.getElementById("ministries").getElementsByClassName('p34part')[0]);
 	
 	
 	//////////////////////////////////////////////////////
 	//					Личное дело	
 	//////////////////////////////////////////////////////
-	let l_spec = game.UI.currentSpec;
-	game.UI.specPerks = [];
-	for (let i=0; i<l_spec.perks.length; i++) {
-		if (!l_spec.isPerkExplored[i]) continue;
-		game.UI.specPerks.push(Inferno.createElement('div', {className:'line linebar dd'}, 
-			Inferno.createElement('div', {className:'d'}, content.perks.c[l_spec.perks[i]].name),
-			Inferno.createElement('div', {className:'e'}, content.perks.c[l_spec.perks[i]].description)
-		));
-	}
 	
-	game.UI.specNotes = l_spec.messages.map(function (u) {
-		let m = utils.getMessage(u);
-		return Inferno.createElement('div', {className:'t2'+(m.read?'':' red')},
-			Inferno.createElement('div', {className:'t'}, 
-				Inferno.createElement('div', {className:'report', style:'background-position: '+(-100*(m.level+1))+'% 0'}, null)
-			),
-			Inferno.createElement('div', {className:'t'}, 
-				Inferno.createElement('span', {className:'c'}, utils.getTime(m.date)),
-				m.text
+	if (document.getElementById("specinfo").classList.contains('d')) {
+		let l_spec = game.UI.currentSpec;
+		game.UI.specPerks = [];
+		for (let i=0; i<l_spec.perks.length; i++) {
+			if (!l_spec.isPerkExplored[i]) continue;
+			game.UI.specPerks.push(Inferno.createElement('div', {className:'line linebar dd'}, 
+				Inferno.createElement('div', {className:'d'}, content.perks.c[l_spec.perks[i]].name),
+				Inferno.createElement('div', {className:'e'}, content.perks.c[l_spec.perks[i]].description)
+			));
+		}
+		
+		game.UI.specNotes = l_spec.messages.map(function (u) {
+			let m = utils.getMessage(u);
+			return Inferno.createElement('div', {className:'t2'+(m.read?'':' red')},
+				Inferno.createElement('div', {className:'t'}, 
+					Inferno.createElement('div', {className:'report', style:'background-position: '+(-100*(m.level+1))+'% 0'}, null)
+				),
+				Inferno.createElement('div', {className:'t'}, 
+					Inferno.createElement('span', {className:'c'}, utils.getTime(m.date)),
+					m.text
+				)
 			)
-		)
-	});
-	
-	game.UI.hasWorks = false;
-	game.UI.specWorks = content.worklists.withSpec.map(function(work) {
-		if (work.requiments(l_spec) > 0) {
-			game.UI.hasWorks = true;
-			let resList = '', cost = work.calcCost(l_spec, l_spec.ministry, l_spec.location);
-			if (cost!={}) {
-				let unf = '';
-				for (let k in cost) {
-					if (k == 'text') unf = cost[k];
-					else resList+= strings.resources[k]+': '+cost[k]+'\n';
+		});
+		
+		game.UI.hasWorks = false;
+		game.UI.specWorks = content.worklists.withSpec.map(function(work) {
+			if (work.requiments(l_spec) > 0) {
+				game.UI.hasWorks = true;
+				let resList = '', cost = work.calcCost(l_spec, l_spec.ministry, l_spec.location);
+				if (cost!={}) {
+					let unf = '';
+					for (let k in cost) {
+						if (k == 'text') unf = cost[k];
+						else resList+= strings.resources[k]+': '+cost[k]+'\n';
+					}
+					resList+=unf;
 				}
-				resList+=unf;
+				else resList = 'Не требуются особые затраты';
+				
+				return Inferno.createElement('div', {className:'line linebar dd b', onClick:function() {
+					let specId = 0;
+					utils.callPopup({
+						id:'work_'+game.UI.currentSpec.stats.experience,
+						text:(l_spec.tasks.length==0?strings.UI.messages.work:strings.UI.messages.workBusy)+'\n'+resList,
+						buttons:[{
+							text: 'OK',
+							callback: function() {
+								utils.startTask(work, [l_spec.id], l_spec.ministry, l_spec.location);
+								utils.closePopup('work_'+game.UI.currentSpec.stats.experience)
+							}
+						},{
+							text: 'Отмена',
+							callback: function() {utils.closePopup('work_'+game.UI.currentSpec.stats.experience)}
+						}]
+					})
+				}}, 
+					Inferno.createElement('div', {className:'p',style:'width:'+work.requiments(l_spec)+'%'}, null),
+					Inferno.createElement('div', {className:'d'}, 
+						Inferno.createElement('div', {className:'task', style:'background-image:url('+work.iconUrl+');background-position: '+(-work.iconOffset*100)+'% 0'}, ' '),
+						work.name,
+						Inferno.createElement('div', {className:'c'}, work.requiments(l_spec)+'%')
+					),
+					Inferno.createElement('div', {className:'e'},work.description)
+				)
 			}
-			else resList = 'Не требуются особые затраты';
 			
-			return Inferno.createElement('div', {className:'line linebar dd b', onClick:function() {
-				let specId = 0;
-				utils.callPopup({
-					id:'work_'+game.UI.currentSpec.stats.experience,
-					text:(l_spec.tasks.length==0?strings.UI.messages.work:strings.UI.messages.workBusy)+'\n'+resList,
-					buttons:[{
-						text: 'OK',
-						callback: function() {
-							utils.startTask(work, [l_spec.id], l_spec.ministry, l_spec.location);
-							utils.closePopup('work_'+game.UI.currentSpec.stats.experience)
-						}
-					},{
-						text: 'Отмена',
-						callback: function() {utils.closePopup('work_'+game.UI.currentSpec.stats.experience)}
-					}]
-				})
-			}}, 
-				Inferno.createElement('div', {className:'p',style:'width:'+work.requiments(l_spec)+'%'}, null),
+		});
+		
+		game.UI.currentWorks = l_spec.tasks.map(function(workId) {
+			let task = world.tasks[workId];
+			let work = content.works[task.id];
+			return Inferno.createElement('div', {className:'line linebar dd b', onClick:(utils.ownedByPlayer(l_spec)?function() {
+					let popUp = {
+						id:'work_stop_'+game.UI.currentSpec.stats.experience,
+						text:'Отменить выполнение задания?',
+						buttons:[{
+							text: 'Снять этого специалиста с задания',
+							callback: function() {
+								utils.stopTask(task, l_spec, 1);
+								utils.closePopup(popUp.id)
+							}
+						},{
+							text: 'Отменить выполнение заданий для всех',
+							callback: function() {
+								task.workers.forEach(function(w, i, a) {utils.stopTask(task, world.specs[w], 1)});
+								utils.closePopup(popUp.id)
+							}
+						},{
+							text: 'Отмена',
+							callback: function() {utils.closePopup(popUp.id);}
+						}]};
+					utils.callPopup(popUp);
+				}:null)}, 
+				Inferno.createElement('div', {className:'p',style:'width:'+utils.workPercent(task, true, l_spec)+'%'}, null),
 				Inferno.createElement('div', {className:'d'}, 
 					Inferno.createElement('div', {className:'task', style:'background-image:url('+work.iconUrl+');background-position: '+(-work.iconOffset*100)+'% 0'}, ' '),
 					work.name,
-					Inferno.createElement('div', {className:'c'}, work.requiments(l_spec)+'%')
+					Inferno.createElement('div', {className:'c'}, utils.workPercent(task, false, l_spec))
 				),
 				Inferno.createElement('div', {className:'e'},work.description)
 			)
-		}
+		});
+		if (l_spec.tasks.length == 0) game.UI.currentWorks = Inferno.createElement('span', {}, strings.UI.idle);
 		
-	});
+		let l_min = 0;
+		let l_notice = strings.UI.notices.allOkay;
+		if (l_spec.attributes.workbalance < -consts.workOverflow) {
+			l_notice = strings.UI.notices.tooMuchRelax;
+		}
+		if (l_spec.attributes.worktypeSatisfaction < 0 && l_spec.attributes.worktypeSatisfaction < l_min) {
+			l_min = l_spec.attributes.worktypeSatisfaction;
+			l_notice = strings.UI.notices.wrongWork;
+		}
+		if (l_spec.attributes.workSatisfaction < 0 && l_spec.attributes.workSatisfactionMult < l_min) {
+			l_min = l_spec.attributes.workSatisfaction;
+			l_notice = strings.UI.notices.tooMuchWork;
+		}
+		if (l_spec.attributes.payoutSatisfaction < 0 && l_spec.attributes.payoutSatisfaction < l_min) {
+			l_min = l_spec.attributes.payoutSatisfaction;
+			l_notice = strings.UI.notices.lowPay;
+		}
+		if (l_spec.attributes.health < l_spec.attributes.maxHealth/10) {
+			l_notice = strings.UI.notices.lowHealth;
+		}
+		if (utils.getSpecSecrecy(l_spec)<consts.visibility[1]) {
+			if (l_spec.stats.portrait.url != '' && l_spec.stats.portrait.url != undefined) game.UI.specImage = Inferno.createElement('img', {src:l_spec.stats.portrait.url}, null);
+			else game.UI.specImage = content.portraits[l_spec.stats.portrait.id].func(l_spec, 'color');
+		}
+		else {
+			game.UI.specImage = Inferno.createElement('img', {src:'res/portraits/unknown.png'}, null);
+		}
+		{ game.UI.specProfile = 
+				Inferno.createElement('div', {},
+					Inferno.createElement('div', {className:'pad sp_top'},
+						Inferno.createElement('div', {className:'line nm'}, 
+							Inferno.createElement('div', {className:'d'}, 
+								(utils.getSpecSecrecy(l_spec)>=consts.visibility[1])?'???':l_spec.stats.name,
+								(utils.getSpecSecrecy(l_spec)<consts.visibility[1]?Inferno.createElement('div', {className:'c'}, 
+									Inferno.createElement('div', {className:'gender',style:'background-position:'+((l_spec.stats.gender-1)*(-100))+'% 0'}, null),
+									Inferno.createElement('div', {className:'race',style:'background-position:'+((l_spec.stats.specie)*(-100))+'% 0'}, null)
+								):null)
+							)
+						),
+						Inferno.createElement('div', {className:'line linebar lv'}, 
+							Inferno.createElement('div', {className:'p',style:'width:'+(utils.getSpecSecrecy(l_spec)<consts.visibility[2]?utils.levelPercent(l_spec):0)+'%'}, null),
+							Inferno.createElement('div', {className:'d'}, strings.UI.level,
+								Inferno.createElement('span', {className:'c'}, (utils.getSpecSecrecy(l_spec)<consts.visibility[1]?utils.getLevel(l_spec):'???'))
+							)
+						),
+						Inferno.createElement('div', {className:'line'}, 
+							Inferno.createElement('div', {className:'sp'}, (utils.getSpecSecrecy(l_spec)>=consts.visibility[1])?'???':utils.getClassName(l_spec)),
+							Inferno.createElement('span', {className:'r'}, (utils.getSpecSecrecy(l_spec)>=consts.visibility[3] && !utils.ownedByPlayer(l_spec))?'???':content.cities[l_spec.location].name)
+						),
+						Inferno.createElement('div', {className:'line linebar st_str'}, 
+							Inferno.createElement('div', {className:'p',style:'width:'+(utils.getSpecSecrecy(l_spec)<consts.visibility[2]?utils.getEndurance(l_spec)*100:0)+'%'}, null),
+							Inferno.createElement('div', {className:'d'}, strings.UI.endurance,
+								Inferno.createElement('span', {className:'c'}, (utils.getSpecSecrecy(l_spec)<consts.visibility[2]?utils.getActualEndurance(l_spec):'???'))
+							)
+						),
+						Inferno.createElement('div', {className:'line linebar st_int'}, 
+							Inferno.createElement('div', {className:'p',style:'width:'+(utils.getSpecSecrecy(l_spec)<consts.visibility[2]?utils.getIntellect(l_spec)*100:0)+'%'}, null),
+							Inferno.createElement('div', {className:'d'}, strings.UI.intellect,
+								Inferno.createElement('span', {className:'c'}, (utils.getSpecSecrecy(l_spec)<consts.visibility[2]?utils.getActualIntellect(l_spec):'???'))
+							)
+						),
+						Inferno.createElement('div', {className:'line linebar st_chr'}, 
+							Inferno.createElement('div', {className:'p',style:'width:'+(utils.getSpecSecrecy(l_spec)<consts.visibility[2]?utils.getCharisma(l_spec)*100:0)+'%'}, null),
+							Inferno.createElement('div', {className:'d'}, strings.UI.charisma,
+								Inferno.createElement('span', {className:'c'}, (utils.getSpecSecrecy(l_spec)<consts.visibility[2]?utils.getActualCharisma(l_spec):'???'))
+							)
+						)
+					),
+					Inferno.createElement('div', {className:'pad sp_img'},
+						game.UI.specImage,
+						Inferno.createElement('div', {className:'ministry',style:'background-position:'+(l_spec.ministry!=null?-100*world.ministries[l_spec.ministry].info.iconOffset:0)+'%;'}, null)
+					),
+					(utils.getSpecSecrecy(l_spec)<consts.visibility[1]?Inferno.createElement('div', {className:'pad sp_info'},
+						Inferno.createElement('div', {className:'pad sp_half'}, 
+							Inferno.createElement('div', {className:'line linebar st_loy'}, 
+								Inferno.createElement('div', {className:'p',style:'width:'+(utils.ownedByPlayer(l_spec)?utils.getLoyalty(l_spec):0)+'%'}, null),
+								Inferno.createElement('div', {className:'d'}, strings.UI.loyalty,
+									Inferno.createElement('span', {className:'c'}, (utils.ownedByPlayer(l_spec)?utils.getLoyalty(l_spec):'???'))
+								)
+							),
+							Inferno.createElement('div', {className:'line linebar st_pyo'}, 
+								Inferno.createElement('div', {className:'p',style:'width:'+(utils.ownedByPlayer(l_spec)?utils.calcPayoutV(l_spec):0)+'%'}, null),
+								Inferno.createElement('div', {className:'d'}, strings.UI.payoutLevel,
+									Inferno.createElement('span', {className:'c'}, (utils.ownedByPlayer(l_spec)?l_spec.attributes.currentPayout:'???'))
+								)
+							),
+							Inferno.createElement('div', {className:'line linebar st_stf'}, 
+								Inferno.createElement('div', {className:'p',style:'width:'+(utils.ownedByPlayer(l_spec)?utils.getSatisfaction(l_spec):0)+'%'}, null),
+								Inferno.createElement('div', {className:'d'}, strings.UI.satisfaction,
+									Inferno.createElement('span', {className:'c'}, (utils.ownedByPlayer(l_spec)?utils.getSatisfaction(l_spec):'???'))
+								)
+							)
+						),
+						Inferno.createElement('div', {className:'pad sp_half'}, 
+							Inferno.createElement('div', {className:'line linebar st_inv'}, 
+								Inferno.createElement('div', {className:'p',style:'width:'+l_spec.attributes.involvement+'%'}, null),
+								Inferno.createElement('div', {className:'d'}, strings.UI.involvement,
+									Inferno.createElement('span', {className:'c'}, l_spec.attributes.involvement)
+								)
+							),
+							Inferno.createElement('div', {className:'line linebar st_opn'}, 
+								Inferno.createElement('div', {className:'p',style:'width:'+((utils.ownedByPlayer(l_spec)||utils.getSpecSecrecy(l_spec)<consts.visibility[3])?(100*l_spec.attributes.health/l_spec.attributes.maxHealth):0)+'%'}, null),
+								Inferno.createElement('div', {className:'d'}, strings.UI.health,
+									Inferno.createElement('span', {className:'c'}, ((utils.ownedByPlayer(l_spec)||utils.getSpecSecrecy(l_spec)<consts.visibility[3])?parseInt(l_spec.attributes.health)+'/'+l_spec.attributes.maxHealth:'???'))
+								)
+							),
+							Inferno.createElement('div', {className:'line linebar st_opn'}, 
+								Inferno.createElement('div', {className:'p',style:'width:'+(100-utils.getSpecSecrecy(l_spec))+'%'}, null),
+								Inferno.createElement('div', {className:'d'}, strings.UI.secrecy,
+									Inferno.createElement('span', {className:'c'}, 100-utils.getSpecSecrecy(l_spec))
+								)
+							)
+						)
+					):null),
+					(l_spec.internalId=='GB'?null:Inferno.createElement('div', {className:'pad sp_info'},
+						Inferno.createElement('div', {className:'pad sp_half'}, 
+							(game.UI.specPerks.length == 0?strings.UI.noPerks:game.UI.specPerks)
+						),
+						(utils.ownedByPlayer(l_spec)?Inferno.createElement('div', {className:'pad sp_half'},
+							l_notice,
+							Inferno.createElement('div', {className:'pad sp_inv'},
+								'Изменить уровень оплаты',
+								Inferno.createElement('div', {className:'b', style:'width:16%', onClick:function() {if (l_spec.attributes.currentPayout>100) l_spec.attributes.currentPayout-=100;}},'---'),
+								Inferno.createElement('div', {className:'b', style:'width:16%', onClick:function() {if (l_spec.attributes.currentPayout>10) l_spec.attributes.currentPayout-=10;}},'--'),
+								Inferno.createElement('div', {className:'b', style:'width:15%', onClick:function() {if (l_spec.attributes.currentPayout>1) l_spec.attributes.currentPayout--;}},'-'),
+								Inferno.createElement('div', {className:'b', style:'width:15%', onClick:function() {l_spec.attributes.currentPayout++;}},'+'),
+								Inferno.createElement('div', {className:'b', style:'width:16%', onClick:function() {l_spec.attributes.currentPayout+=10;}},'++'),
+								Inferno.createElement('div', {className:'b', style:'width:16%', onClick:function() {l_spec.attributes.currentPayout+=100;}},'+++')
+							)
+						):null)
+					)),
+					((utils.ownedByPlayer(l_spec)||utils.getSpecSecrecy(l_spec)<consts.visibility[4])?Inferno.createElement('div', {className:'pad sp_info'}, game.UI.currentWorks):null),
+					(utils.ownedByPlayer(l_spec)?Inferno.createElement('div', {className:'pad sp_info'}, (game.UI.hasWorks?game.UI.specWorks:strings.UI.noWork)):null),
+					((game.UI.specNotes==0 || !utils.ownedByPlayer(l_spec))?null:Inferno.createElement('div', {className:'ux pad sp_info table st'}, 
+						Inferno.createElement('div', {className:'t3'},game.UI.specNotes)
+					))
+				);
+		}
+		Inferno.render(game.UI.specProfile, document.getElementById("specinfo").getElementsByClassName('cc')[0]);
+	}
 	
-	game.UI.currentWorks = l_spec.tasks.map(function(workId) {
-		let task = world.tasks[workId];
-		let work = content.works[task.id];
-		return Inferno.createElement('div', {className:'line linebar dd b', onClick:function() {
-				let popUp = {
-					id:'work_stop_'+game.UI.currentSpec.stats.experience,
-					text:'Отменить выполнение задания?',
-					buttons:[{
-						text: 'Снять этого специалиста с задания',
-						callback: function() {
-							utils.stopTask(task, l_spec, 1);
-							utils.closePopup(popUp.id)
-						}
-					},{
-						text: 'Отменить выполнение заданий для всех',
-						callback: function() {
-							task.workers.forEach(function(w, i, a) {utils.stopTask(task, world.specs[w], 1)});
-							utils.closePopup(popUp.id)
-						}
-					},{
-						text: 'Отмена',
-						callback: function() {utils.closePopup(popUp.id);}
-					}]};
-				utils.callPopup(popUp);
-			}}, 
-			Inferno.createElement('div', {className:'p',style:'width:'+utils.workPercent(task, true, l_spec)+'%'}, null),
-			Inferno.createElement('div', {className:'d'}, 
-				Inferno.createElement('div', {className:'task', style:'background-image:url('+work.iconUrl+');background-position: '+(-work.iconOffset*100)+'% 0'}, ' '),
-				work.name,
-				Inferno.createElement('div', {className:'c'}, utils.workPercent(task, false, l_spec))
-			),
-			Inferno.createElement('div', {className:'e'},work.description)
-		)
-	});
-	if (l_spec.tasks.length == 0) game.UI.currentWorks = Inferno.createElement('span', {}, strings.UI.idle);
-	
-	l_min = 0;
-	let l_notice = strings.UI.notices.allOkay;
-	if (l_spec.attributes.workbalance < -consts.workOverflow) {
-		l_notice = strings.UI.notices.tooMuchRelax;
-	}
-	if (l_spec.attributes.worktypeSatisfaction < 0 && l_spec.attributes.worktypeSatisfaction < l_min) {
-		l_min = l_spec.attributes.worktypeSatisfaction;
-		l_notice = strings.UI.notices.wrongWork;
-	}
-	if (l_spec.attributes.workSatisfaction < 0 && l_spec.attributes.workSatisfactionMult < l_min) {
-		l_min = l_spec.attributes.workSatisfaction;
-		l_notice = strings.UI.notices.tooMuchWork;
-	}
-	if (l_spec.attributes.payoutSatisfaction < 0 && l_spec.attributes.payoutSatisfaction < l_min) {
-		l_min = l_spec.attributes.payoutSatisfaction;
-		l_notice = strings.UI.notices.lowPay;
-	}
-	if (l_spec.attributes.health < l_spec.attributes.maxHealth/10) {
-		l_notice = strings.UI.notices.lowHealth;
-	}
-	{ game.UI.specProfile = 
-			Inferno.createElement('div', {},
-				Inferno.createElement('div', {className:'pad sp_top'},
-					Inferno.createElement('div', {className:'line nm'}, 
-						Inferno.createElement('div', {className:'d'}, 
-							l_spec.stats.name,
-							Inferno.createElement('div', {className:'c'}, 
-								Inferno.createElement('div', {className:'gender',style:'background-position:'+((l_spec.stats.gender-1)*(-100))+'% 0'}, null),
-								Inferno.createElement('div', {className:'race',style:'background-position:'+((l_spec.stats.specie)*(-100))+'% 0'}, null)
-							)
-						)
-					),
-					Inferno.createElement('div', {className:'line linebar lv'}, 
-						Inferno.createElement('div', {className:'p',style:'width:'+utils.levelPercent(l_spec)+'%'}, null),
-						Inferno.createElement('div', {className:'d'}, strings.UI.level,
-							Inferno.createElement('span', {className:'c'}, utils.getLevel(l_spec))
-						)
-					),
-					Inferno.createElement('div', {className:'line'}, 
-						Inferno.createElement('div', {className:'sp'}, utils.getClassName(l_spec)),
-						Inferno.createElement('span', {className:'r'}, utils.getClassName(l_spec))
-					),
-					Inferno.createElement('div', {className:'line linebar st_str'}, 
-						Inferno.createElement('div', {className:'p',style:'width:'+utils.getEndurance(l_spec)*100+'%'}, null),
-						Inferno.createElement('div', {className:'d'}, strings.UI.endurance,
-							Inferno.createElement('span', {className:'c'}, utils.getActualEndurance(l_spec))
-						)
-					),
-					Inferno.createElement('div', {className:'line linebar st_int'}, 
-						Inferno.createElement('div', {className:'p',style:'width:'+utils.getIntellect(l_spec)*100+'%'}, null),
-						Inferno.createElement('div', {className:'d'}, strings.UI.intellect,
-							Inferno.createElement('span', {className:'c'}, utils.getActualIntellect(l_spec))
-						)
-					),
-					Inferno.createElement('div', {className:'line linebar st_chr'}, 
-						Inferno.createElement('div', {className:'p',style:'width:'+utils.getCharisma(l_spec)*100+'%'}, null),
-						Inferno.createElement('div', {className:'d'}, strings.UI.charisma,
-							Inferno.createElement('span', {className:'c'}, utils.getActualCharisma(l_spec))
-						)
-					)
-				),
-				Inferno.createElement('div', {className:'pad sp_img'},
-					Inferno.createElement('img', {src:l_spec.stats.portrait.url}, null),
-					Inferno.createElement('div', {className:'ministry',style:'background-position:'+(l_spec.ministry!=null?-100*world.ministries[l_spec.ministry].info.iconOffset:0)+'%;'}, null)
-				),
-				Inferno.createElement('div', {className:'pad sp_info'},
-					Inferno.createElement('div', {className:'pad sp_half'}, 
-						Inferno.createElement('div', {className:'line linebar st_loy'}, 
-							Inferno.createElement('div', {className:'p',style:'width:'+utils.getLoyalty(l_spec)+'%'}, null),
-							Inferno.createElement('div', {className:'d'}, strings.UI.loyalty,
-								Inferno.createElement('span', {className:'c'}, utils.getLoyalty(l_spec))
-							)
-						),
-						Inferno.createElement('div', {className:'line linebar st_pyo'}, 
-							Inferno.createElement('div', {className:'p',style:'width:'+utils.calcPayoutV(l_spec)+'%'}, null),
-							Inferno.createElement('div', {className:'d'}, strings.UI.payoutLevel,
-								Inferno.createElement('span', {className:'c'}, l_spec.attributes.currentPayout)
-							)
-						),
-						Inferno.createElement('div', {className:'line linebar st_stf'}, 
-							Inferno.createElement('div', {className:'p',style:'width:'+utils.getSatisfaction(l_spec)+'%'}, null),
-							Inferno.createElement('div', {className:'d'}, strings.UI.satisfaction,
-								Inferno.createElement('span', {className:'c'}, utils.getSatisfaction(l_spec))
-							)
-						)
-					),
-					Inferno.createElement('div', {className:'pad sp_half'}, 
-						Inferno.createElement('div', {className:'line linebar st_inv'}, 
-							Inferno.createElement('div', {className:'p',style:'width:'+l_spec.attributes.involvement+'%'}, null),
-							Inferno.createElement('div', {className:'d'}, strings.UI.involvement,
-								Inferno.createElement('span', {className:'c'}, l_spec.attributes.involvement)
-							)
-						),
-						Inferno.createElement('div', {className:'line linebar st_opn'}, 
-							Inferno.createElement('div', {className:'p',style:'width:'+(100*l_spec.attributes.health/l_spec.attributes.maxHealth)+'%'}, null),
-							Inferno.createElement('div', {className:'d'}, strings.UI.health,
-								Inferno.createElement('span', {className:'c'}, l_spec.attributes.health+'/'+l_spec.attributes.maxHealth)
-							)
-						),
-						Inferno.createElement('div', {className:'line linebar st_opn'}, 
-							Inferno.createElement('div', {className:'p',style:'width:'+(100-l_spec.attributes.secrecy)+'%'}, null),
-							Inferno.createElement('div', {className:'d'}, strings.UI.secrecy,
-								Inferno.createElement('span', {className:'c'}, 100-l_spec.attributes.secrecy)
-							)
-						)
-					)
-				),
-				Inferno.createElement('div', {className:'pad sp_info'},
-					Inferno.createElement('div', {className:'pad sp_half'}, 
-						(game.UI.specPerks.length == 0?strings.UI.noPerks:game.UI.specPerks)
-					),
-					Inferno.createElement('div', {className:'pad sp_half'},
-						l_notice,
-						Inferno.createElement('div', {className:'pad sp_inv'},
-							'Изменить уровень оплаты',
-							Inferno.createElement('div', {className:'b', style:'width:16%', onClick:function() {if (l_spec.attributes.currentPayout>100) l_spec.attributes.currentPayout-=100;}},'---'),
-							Inferno.createElement('div', {className:'b', style:'width:16%', onClick:function() {if (l_spec.attributes.currentPayout>10) l_spec.attributes.currentPayout-=10;}},'--'),
-							Inferno.createElement('div', {className:'b', style:'width:15%', onClick:function() {if (l_spec.attributes.currentPayout>1) l_spec.attributes.currentPayout--;}},'-'),
-							Inferno.createElement('div', {className:'b', style:'width:15%', onClick:function() {l_spec.attributes.currentPayout++;}},'+'),
-							Inferno.createElement('div', {className:'b', style:'width:16%', onClick:function() {l_spec.attributes.currentPayout+=10;}},'++'),
-							Inferno.createElement('div', {className:'b', style:'width:16%', onClick:function() {l_spec.attributes.currentPayout+=100;}},'+++')
-						)
-					)
-				),
-				Inferno.createElement('div', {className:'pad sp_info'}, game.UI.currentWorks),
-				Inferno.createElement('div', {className:'pad sp_info'}, (game.UI.hasWorks?game.UI.specWorks:strings.UI.noWork)),
-				(game.UI.specNotes==0?null:Inferno.createElement('div', {className:'ux pad sp_info table st'}, 
-					Inferno.createElement('div', {className:'t3'},game.UI.specNotes)
-				))
-			);
-	}
-	Inferno.render(game.UI.specProfile, document.getElementById("specinfo").getElementsByClassName('cc')[0]);
 };
 
 function m_init() {
@@ -504,14 +630,17 @@ function m_init() {
 		else document.querySelectorAll('#top .ico1')[i].classList.add('na');
 	}
 	
-	document.querySelectorAll('#top .menukey')[0].innerHTML = strings.UI.menu;
+	document.querySelectorAll('#top .menukey')[0].innerHTML = strings.UI.menu.pause;
+	document.querySelectorAll('#menu .b')[0].innerHTML = strings.UI.menu.continue;
+	document.querySelectorAll('#menu .b')[1].innerHTML = strings.UI.menu.saveAndExit;
+	
 	document.querySelectorAll('#top .menukey')[1].innerHTML = strings.UI.specs;
 	document.querySelectorAll('#top .menukey')[2].innerHTML = strings.UI.map;
 	document.querySelectorAll('#top .menukey')[3].innerHTML = strings.UI.ministries;
 	document.querySelectorAll('#top .menukey')[4].innerHTML = strings.UI.player;
 	document.querySelectorAll('#top .menukey')[5].innerHTML = strings.UI.techs;
 	
-	document.querySelector('#menu .h').innerHTML = strings.UI.menu;
+	document.querySelector('#menu .h').innerHTML = strings.UI.menu.pause;
 	document.querySelector('#player .h').innerHTML = strings.UI.player;
 	document.querySelector('#specialists .h').innerHTML = strings.UI.specs;
 	document.querySelector('#equestria .h').innerHTML = strings.UI.map;
