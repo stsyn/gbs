@@ -18,7 +18,7 @@ content.works.w_studying = {
 	iconUrl:'res/icons/tasks.png',
 	iconOffset:2,
 	name:'Быстрые курсы',
-	description:'',
+	description:'Двухнедельные курсы начальной подготовки. Дают лишь самые основы, поэтому бесполезны для опытных специалистов.',
 	target:14,
 	maxWorkers:1,
 	minWorkers:1,
@@ -29,7 +29,8 @@ content.works.w_studying = {
 		return {money:1000};
 	},
 	requiments:function(spec) {
-		return parseInt(-40+60*(3-utils.getLevel(spec)));
+		//return parseInt(-40+60*(3-utils.getLevel(spec)));
+		return 1;
 	},
 	whenStart:function(taskId) {return 0},
 	whenStartPerSpec:function(task) {return 0},
@@ -46,17 +47,94 @@ content.works.w_studying = {
 	whenFailed:function(taskId) {return 0}
 };
 
+content.works.w_movement = {
+	id:'w_movement',
+	iconUrl:'res/icons/tasks.png',
+	iconOffset:3,
+	name:'Перемещение',
+	description:'Передвижение из одного города в другой',
+	target:1,
+	maxWorkers:1,
+	minWorkers:1,
+	onlyOne:false,
+	unstoppable:true,
+	updateInterval:utils.time2ms({hours:1}),
+	data: {
+		days:'Дней'
+	},
+	
+	calcCost:function(spec, ministry, location) {
+		return {text: parseInt(content.roadmap[spec.location][t.location]*world.data.travelSpeed/60)+this.data.days};
+	},
+	requiments:function(spec) {
+		return 100;
+	},
+	whenStart:function(taskId) {return 0},
+	whenStartPerSpec:function(t, spec) {
+		t.target = content.roadmap[spec.location][t.location]*world.data.travelSpeed;
+	},
+	whenComplete:function(t) {
+		world.specs[t.workers[0]].location = t.location;
+	},
+	update:function(t) {
+		t.value+=60;
+	},
+	updatePerSpec:function(task, worker) {return 0},
+	whenStopped:function(taskId) {return 0;},
+	whenStoppedPerSpec:function(taskId) {return 0;},
+	whenFailed:function(taskId) {return 0}
+};
+
+content.works.w_hire = {
+	id:'w_hire',
+	iconUrl:'res/icons/tasks.png',
+	iconOffset:4,
+	name:'Найм',
+	description:'Нанять специалиста на постоянной основе.',
+	target:1,
+	maxWorkers:0,
+	minWorkers:1,
+	onlyOne:false,
+	updateInterval:1,
+	data:{
+		string:'Нанять специалиста?'
+	},
+	
+	calcCost:function(spec, ministry, location) {
+		let x = (100-world.ministries[spec.ministry].stats.loyalty-(100-utils.getSpecSecrecy(spec))*3);
+		if (x<0) return {text:this.data.string};
+		return {money:parseInt(spec.attributes.payout*x/2), text:this.data.string};
+	},
+	requiments:function(spec) {
+		if (spec.ministry == game.player.ministry.id) return 0;
+		if (world.ministries[spec.ministry].owner == spec.id) return 0;
+		if (utils.getSpecSecrecy(spec)>=93) return 0;
+		return 100;
+	},
+	whenStart:function(taskId) {return 0},
+	whenStartPerSpec:function(t, spec) {return 0},
+	whenComplete:function(t) {
+		console.log(t);
+		utils.spec2ministry(t.workers[0], t.ministry);
+	},
+	update:function(t) {utils.completeTask(t)},
+	updatePerSpec:function(task, worker) {return 0},
+	whenStopped:function(taskId) {return 0;},
+	whenStoppedPerSpec:function(taskId) {return 0;},
+	whenFailed:function(taskId) {return 0}
+};
+
 content.works.w_intStudying = {
 	id:'w_intStudying',
 	iconUrl:'res/icons/tasks.png',
 	iconOffset:2,
 	name:'Специализированные курсы',
-	description:'',
+	description:'Месячный курс научных лекций и семинарских занятий при Министерстве Тайных Наук.',
 	target:30,
 	maxWorkers:1,
 	minWorkers:1,
 	onlyOne:false,
-	updateInterval:utils.time2ms({date:2}),
+	updateInterval:utils.time2ms({date:1}),
 	
 	data:{
 		failString:'В связи с неуспеваемостью в дальнейшем обучении было отказано.'
@@ -105,12 +183,12 @@ content.works.w_endStudying = {
 	iconUrl:'res/icons/tasks.png',
 	iconOffset:2,
 	name:'Военная подготовка',
-	description:'',
+	description:'Месячные военные сборы при Министерстве Крутости. Оформляется обязательная страховка на случай серьезных травм.',
 	target:30,
 	maxWorkers:1,
 	minWorkers:1,
 	onlyOne:false,
-	updateInterval:utils.time2ms({date:2}),
+	updateInterval:utils.time2ms({date:1}),
 	
 	data:{
 		failString:'Освобожден от занятий по состоянию здоровья.',
@@ -165,13 +243,13 @@ content.works.w_chrStudying = {
 	id:'w_chrStudying',
 	iconUrl:'res/icons/tasks.png',
 	iconOffset:2,
-	name:'Актерские курсы',
-	description:'',
+	name:'Ораторские курсы',
+	description:'Месячные курсы актерского и ораторского мастерства при Министерстве Стиля.',
 	target:30,
 	maxWorkers:1,
 	minWorkers:1,
 	onlyOne:false,
-	updateInterval:utils.time2ms({date:2}),
+	updateInterval:utils.time2ms({date:1}),
 	
 	calcCost:function(spec, ministry, location) {
 		return {money:parseInt(1000*(50-world.ministries.MI.stats.part)*(1.33-utils.getCharisma(spec)))};
@@ -215,6 +293,7 @@ function m_init() {
 	content.worklists.withSpec.push(content.works.w_intStudying);
 	content.worklists.withSpec.push(content.works.w_endStudying);
 	content.worklists.withSpec.push(content.works.w_chrStudying);
+	content.worklists.perSpec.push(content.works.w_hire);
 	
 	return 0;
 }

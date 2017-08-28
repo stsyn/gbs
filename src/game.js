@@ -6,7 +6,8 @@ content.gameLaunchers.push(function() {
 	
 	game.player.ministry = world.ministries.OIA;
 	game.player.resources.money = world.ministries.OIA.money;
-	utils.newDayTick();
+	if (world.time == 0) utils.newDayTick();
+	if (world.specs[0].tasks.length > 0) content.perks.c.p_gb_sys.onTask();
 });
 
 content.gameCreators.push(function() {
@@ -85,7 +86,9 @@ content.gameCreators.push(function() {
 				),
 				Inferno.createElement('div', {className:'t'}, 
 					Inferno.createElement('span', {className:'c'}, utils.getTime(m.date)),
+					' ',
 					Inferno.createElement('span', {className:'c'}, s),
+					' ',
 					m.text
 				)
 			)
@@ -396,6 +399,7 @@ content.gameCycles.main = function() {
 				),
 				Inferno.createElement('div', {className:'t'}, 
 					Inferno.createElement('span', {className:'c'}, utils.getTime(m.date)),
+					' ',
 					m.text
 				)
 			)
@@ -414,18 +418,17 @@ content.gameCycles.main = function() {
 					}
 					resList+=unf;
 				}
-				else resList = 'Не требуются особые затраты';
+				else resList = strings.UI.messages.freeTask;
 				
 				return Inferno.createElement('div', {className:'line linebar dd b', onClick:function() {
 					let specId = 0;
 					utils.callPopup({
-						id:'work_'+game.UI.currentSpec.stats.experience,
 						text:(l_spec.tasks.length==0?strings.UI.messages.work:strings.UI.messages.workBusy)+'\n'+resList,
 						buttons:[{
 							text: 'OK',
 							callback: function() {
-								utils.startTask(work, [l_spec.id], l_spec.ministry, l_spec.location);
-								utils.closePopup('work_'+game.UI.currentSpec.stats.experience)
+								utils.startTask(work, [l_spec.id], l_spec.ministry, world.homecity);
+								utils.closePopup()
 							}
 						},{
 							text: 'Отмена',
@@ -445,29 +448,97 @@ content.gameCycles.main = function() {
 			
 		});
 		
+		game.UI.hasPerWorks = false;
+		game.UI.specPerWorks = content.worklists.perSpec.map(function(work) {
+			if (work.maxWorkers == 0) {
+				if (work.requiments(l_spec) > 0) {
+					game.UI.hasPerWorks = true;
+					let resList = '', cost = work.calcCost(l_spec, l_spec.ministry, l_spec.location);
+					if (cost!={}) {
+						let unf = '';
+						for (let k in cost) {
+							if (k == 'text') unf = cost[k];
+							else resList+= strings.resources[k]+': '+cost[k]+'\n';
+						}
+						resList+=unf;
+					}
+					
+					return Inferno.createElement('div', {className:'line linebar dd b', onClick:function() {
+						utils.callPopup({
+							text:resList,
+							buttons:[{
+								text: 'OK',
+								callback: function() {
+									utils.startTask(work, [l_spec.id], game.player.ministry.id, world.homecity);
+									utils.closePopup()
+								}
+							},{
+								text: 'Отмена',
+								callback: function() {utils.closePopup()}
+							}]
+						})
+					}}, 
+						Inferno.createElement('div', {className:'p',style:'width:'+work.requiments(l_spec)+'%'}, null),
+						Inferno.createElement('div', {className:'d'}, 
+							Inferno.createElement('div', {className:'task', style:'background-image:url('+work.iconUrl+');background-position: '+(-work.iconOffset*100)+'% 0'}, ' '),
+							work.name,
+							Inferno.createElement('div', {className:'c'}, work.requiments(l_spec)+'%')
+						),
+						Inferno.createElement('div', {className:'e'},work.description)
+					)
+				}
+			}
+			
+			
+		});
+		
 		game.UI.currentWorks = l_spec.tasks.map(function(workId) {
 			let task = world.tasks[workId];
 			let work = content.works[task.id];
 			return Inferno.createElement('div', {className:'line linebar dd b', onClick:(utils.ownedByPlayer(l_spec)?function() {
-					let popUp = {
-						id:'work_stop_'+game.UI.currentSpec.stats.experience,
-						text:'Отменить выполнение задания?',
+					let popUp
+					if (task.workers.length == 1) 
+						popUp = {
+							text: strings.UI.messages.stopSolo,
+							buttons:[{
+								text: strings.UI.messages.removeSpecFromTask,
+								callback: function() {
+									utils.stopTask(task, l_spec, 1);
+									utils.closePopup()
+								}
+							},{
+								text: strings.UI.messages.cancel,
+								callback: function() {utils.closePopup();}
+							}]};
+					else 
+						popUp = {
+							text: strings.UI.messages.stop,
+							buttons:[{
+								text: strings.UI.messages.removeSpecFromTask,
+								callback: function() {
+									utils.stopTask(task, l_spec, 1);
+									utils.closePopup()
+								}
+							},{
+								text: strings.UI.messages.removeAllSpecsFromTask,
+								callback: function() {
+									task.workers.forEach(function(w, i, a) {utils.stopTask(task, world.specs[w], 1)});
+									utils.closePopup()
+								}
+							},{
+								text: strings.UI.messages.cancel,
+								callback: function() {utils.closePopup();}
+							}]};
+					if (work.unstoppable) {
+						popUp = {
+						text: strings.UI.messages.cannotStop,
 						buttons:[{
-							text: 'Снять этого специалиста с задания',
+							text: strings.UI.messages.ok,
 							callback: function() {
-								utils.stopTask(task, l_spec, 1);
-								utils.closePopup(popUp.id)
+								utils.closePopup()
 							}
-						},{
-							text: 'Отменить выполнение заданий для всех',
-							callback: function() {
-								task.workers.forEach(function(w, i, a) {utils.stopTask(task, world.specs[w], 1)});
-								utils.closePopup(popUp.id)
-							}
-						},{
-							text: 'Отмена',
-							callback: function() {utils.closePopup(popUp.id);}
 						}]};
+					}
 					utils.callPopup(popUp);
 				}:null)}, 
 				Inferno.createElement('div', {className:'p',style:'width:'+utils.workPercent(task, true, l_spec)+'%'}, null),
@@ -614,6 +685,7 @@ content.gameCycles.main = function() {
 					)),
 					((utils.ownedByPlayer(l_spec)||utils.getSpecSecrecy(l_spec)<consts.visibility[4])?Inferno.createElement('div', {className:'pad sp_info'}, game.UI.currentWorks):null),
 					(utils.ownedByPlayer(l_spec)?Inferno.createElement('div', {className:'pad sp_info'}, (game.UI.hasWorks?game.UI.specWorks:strings.UI.noWork)):null),
+					Inferno.createElement('div', {className:'pad sp_info'}, (game.UI.hasPerWorks?game.UI.specPerWorks:strings.UI.noWork)),
 					((game.UI.specNotes==0 || !utils.ownedByPlayer(l_spec))?null:Inferno.createElement('div', {className:'ux pad sp_info table st'}, 
 						Inferno.createElement('div', {className:'t3'},game.UI.specNotes)
 					))

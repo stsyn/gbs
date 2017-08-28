@@ -4,6 +4,7 @@ class spec {
 		stats:{name:'',charisma:0,intellect:0,endurance:0,level:undefined,experience:undefined,gender:0,specie:undefined,
 			portrait:{url:''}},
 		attributes:{payout:undefined,maxHealth:0,involvement:0,payoutSatisfaction:0,workSatisfaction:90,worktypeSatisfaction:50,workbalance:0,secrecy:100},
+		data:{},
 		ministry:null,owner:null,location:null,perks:null,isPerkExplored:[],tasks:[],messages:[],notifyLevel:null
 	}) {
 		this.id = world.specs.length;
@@ -41,6 +42,7 @@ class spec {
 		this.counters.updateMult = 1;
 		this.counters.main = consts.specUpdateInterval;
 		
+		if (spec.data == undefined) this.data = {};
 		if (spec.stats == undefined) spec.stats = {};
 		if (spec.stats.portrait == undefined) spec.stats.portrait = {};
 		if (spec.attributes == undefined) spec.attributes = {};
@@ -55,7 +57,6 @@ class spec {
 		if (this.attributes.payoutSatisfaction == undefined) this.attributes.payoutSatisfaction=0;
 		if (this.attributes.workbalance == undefined) this.attributes.workbalance=0;
 		if (this.attributes.secrecy == undefined) this.attributes.secrecy=100;
-		if (this.attributes.unspecified == undefined) this.attributes.unspecified=[];
 		this.ministry = spec.ministry;
 		this.owner = spec.owner;
 		this.location = spec.location;
@@ -69,7 +70,7 @@ class spec {
 			this.stats.portrait.bodyHSV = {};
 			this.stats.portrait.bodyHSV.h = parseInt(Math.random() * 360);
 			this.stats.portrait.bodyHSV.s = parseInt(Math.random() * 100);
-			this.stats.portrait.bodyHSV.v = parseInt((1-Math.random()*Math.random()) * 50);
+			this.stats.portrait.bodyHSV.v = parseInt((1-Math.random()*Math.random()) * 85);
 		}
 		if (this.stats.portrait.maneColor == undefined ||this.stats.portrait.maneColor.length != 7) {
 			this.stats.portrait.maneHSV = {};

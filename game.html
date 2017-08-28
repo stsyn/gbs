@@ -32,7 +32,7 @@
 	</div>
 	
 	<div id="windows">
-		<div id="popUp" class="pu d">
+		<div id="popUp" class="pu d" style="z-index:9999">
 			<div class="back" style="z-index:9998"></div>
 			<div class="w m" style="z-index:9999">
 				<div class="cc big" style="text-align:center">
@@ -44,6 +44,14 @@
 					<div class='loadline'></div>
 				</div>
 			</div>
+		</div>
+		
+		<div id="blackBackSelectSpec" class="pu" style="z-index:2999">
+			<div class="back" style="z-index:9999"></div>
+		</div>
+		
+		<div id="blackBack" class="pu" style="z-index:4999">
+			<div class="back" style="z-index:9999"></div>
 		</div>
 		
 		<div id="menu">
@@ -300,7 +308,7 @@
 			</div>
 		</div>
 		
-		<div id="news" class="d">
+		<div id="news" class="d" style="z-index:1999">
 			<div class="w tall">
 				<div class="h">
 					<span>Новости</span>
@@ -311,8 +319,8 @@
 			</div>
 		</div>
 		
-		<div id="specinfo">
-			<div class="w tall">
+		<div id="specinfo" style="z-index:5000">
+			<div class="w tall" style="z-index:9999">
 				<div class="h">
 					<span>Личное дело</span>
 				</div>

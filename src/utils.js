@@ -370,6 +370,8 @@ var utils = {
 	
 	callPopup(popup) {
 		game.UI.tspeed = document.querySelectorAll('#top .ico1').length-world.currentSpeed-1;
+		if (game.UI.tspeed == 3) game.UI.tspeed = 1;
+		
 		utils.changeSpeed(3);
 		let b;
 		if (popup.buttons!=undefined && popup.buttons.length > 0) {
@@ -492,11 +494,17 @@ var utils = {
 	},
 	
 	OIAspecTick(spec) {
+		let w = (utils.getCurrentWork(spec).id!='w_sys_relaxing');
+		let f = (!w?'onIdleTick':'onTaskTick');
+		spec.perks.forEach (function (s, i, a) {
+			if (content.perks.c[s][f] != undefined) content.perks.c[s][f](spec);
+		});
+		
 		if (spec.internalId == 'GB') return;
 		
 		if (spec.attributes.secrecy>60) spec.attributes.secrecy--;
 		//перерасчет работы
-		if (spec.tasks.length != 0) {
+		if (w) {
 			spec.attributes.workbalance += 1;
 			if (spec.attributes.secrecy>25) spec.attributes.secrecy--;
 		}
@@ -530,10 +538,10 @@ var utils = {
 		
 	},
 	
-	specTick(spec) {
+	specTick(spec) {		
 		//только для Голденблада
 		if (spec.internalId == 'GB') {
-			spec.counters.main = parseInt(consts.gameSpeed[world.currentSpeed]);
+			spec.counters.main += consts.gameSpeed[3];
 			if (world.currentSpeed == 1) spec.attributes.health-=0.05;
 			if (world.currentSpeed == 3 && spec.attributes.health < spec.attributes.maxHealth) spec.attributes.health+=0.01;
 			if (spec.stats.health<=0) utils.deadSpec(spec);
@@ -555,7 +563,7 @@ var utils = {
 		//добавление перков
 		for (let i=0; i<content.idlePerksGenerators.length; i++) content.idlePerksGenerators[i](world, spec);
 		
-		spec.counters.main = consts.specUpdateInterval;
+		spec.counters.main += consts.specUpdateInterval;
 		
 		if (spec.attributes.health<=0) utils.deadSpec(spec);
 	},
@@ -586,6 +594,12 @@ var utils = {
 		pat.whenFailed(work);
 		utils.destroyWork(work, 3);
 	},
+
+	completeTask(work) {
+		let pat = content.works[work.id]; 
+		pat.whenComplete(work);
+		utils.destroyWork(work, 0);
+	},
 	
 	stopTask(work, spec, reason) {
 		let pat = content.works[work.id]; 
@@ -611,6 +625,9 @@ var utils = {
 			if (spec.tasks[i] == work.internalId) break;
 		}
 		spec.tasks.splice(i,1);
+		
+		if ((spec.internalId == 'GB') && (location != world.homecity))
+			utils.startTask(content.works.w_movement, [spec.id], spec.ministry, world.homecity);
 		
 		if (work.workers.length < pat.minWorkers) {
 			if (work.hasStarted) pat.whenStopped(work);
@@ -648,11 +665,26 @@ var utils = {
 				if (utils.stopTask(work, world.specs[worker], 2)) return;
 			}
 			else if (world.specs[worker].tasks[0] == work.internalId) {
-				working++;
+				if ((work.id != 'w_movement') && (world.specs[worker].location != work.location)) {
+					utils.startTask(content.works.w_movement, [worker], world.specs[worker].ministry, work.location, true);
+				}
+				else working++;
 			}
 		});
 		if (working>=pat.minWorkers && !work.hasStarted) {
 			utils.startWork(pat, work);
+			work.workers.forEach(function (worker, i, a) {
+				if (world.specs[worker].tasks[0] == work.internalId) {
+					if (!work.hasStartedPerSpec[i]) {
+						work.hasStartedPerSpec[i] = true;
+						let spec = world.specs[worker];
+						pat.whenStartPerSpec(work, spec);
+						for (let j=0; j<spec.perks.length; j++) {
+							content.perks.c[spec.perks[j]].onTask(spec);
+						}
+					}
+				}
+			});
 			work.timeBeforeUpdate += pat.updateInterval;
 			return;
 		}
@@ -661,14 +693,6 @@ var utils = {
 		if (working>=pat.minWorkers) {
 			work.workers.forEach(function (worker, i, a) {
 				if (world.specs[worker].tasks[0] == work.internalId) {
-					if (pat.minWorkers==1 && !work.hasStartedPerSpec[i]) {
-						work.hasStartedPerSpec[i] = true;
-						let spec = world.specs[worker];
-						pat.whenStartPerSpec(work, spec);
-						for (let j=0; j<spec.perks.length; j++) {
-							content.perks.c[spec.perks[j]].onTask(spec);
-						}
-					}
 					pat.updatePerSpec(work, world.specs[worker]);
 				}
 			});
@@ -680,38 +704,26 @@ var utils = {
 			if (work.hasStarted) work.timeBeforeUpdate += pat.updateInterval;
 			else work.timeBeforeUpdate += consts.workCheckInterval;
 		}
-		else {
-			pat.whenComplete(work);
-			utils.destroyWork(work, 0);
-		}
+		else utils.completeTask(work);
 	},
 	
 	makePerkVisible(spec, perkId) {
-		utils.addNotify('specs', spec.id, 1, strings.UI.messages.perkFound.replace('%perk%', content.perks.c[spec.perks[perkId]].name));
+		if (spec.owner == game.player.ministry.id) utils.addNotify('specs', spec.id, 1, strings.UI.messages.perkFound.replace('%perk%', content.perks.c[spec.perks[perkId]].name));
 		spec.isPerkExplored[perkId] = true;
 	},
 	
-	startTask(task, spec, ministry, location) {
+	startTask(task, spec, ministry, location, insertBefore) {
 		let i;
 		for (i=0; world.tasks[i]!=undefined; i++) 0;
-		world.tasks[i] = new work(task.id, spec, location, ministry, i, Math.pow(world.roadmap[world.homecity][location],0.75)*world.data.taskStartTimeout);
+		let timeout = Math.pow(world.roadmap[world.homecity][location],0.75)*world.data.taskStartTimeout;
+		if (task.id == content.works.w_movement) timeout = 0;
+		world.tasks[i] = new work(task.id, spec, location, ministry, i, timeout);
 		let workO = world.tasks[i];
 		for (let s=0; s<spec.length; s++) {
-			world.specs[spec[s]].tasks.push(i);
+			if (insertBefore) world.specs[spec[s]].tasks.unshift(i);
+			else world.specs[spec[s]].tasks.push(i);
 			workO.hasStartedPerSpec[s] = false;
 		}
-		//task.whenStart(i);
-		/*
-		let working = 0;
-		workO.workers.forEach(function (worker, i, a) {
-			if (task.requiments(world.specs[worker])<0) {
-				if (utils.stopTask(workO, world.specs[worker], 2)) return;
-			}
-			else if (world.specs[worker].tasks[0] == workO.internalId) {
-				working++;
-			}
-		});
-		if (working>=task.minWorkers && !workO.hasStarted) utils.startWork(task, workO);*/
 	},
 	
 	

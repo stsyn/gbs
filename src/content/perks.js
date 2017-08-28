@@ -9,9 +9,25 @@ content.perks.c.p_gb_sys = {
 		spec.shadow.loyaltyBonus = 100000;
 		spec.shadow.satisfactionBonus = -100000;
 		spec.attributes.payout = 0;},
-    onTask:function(spec) {return 0;},
-    onIdle:function(spec) {return 0;}
+    onTask:function(spec,task) {
+		spec.data.worldSpeed = world.currentSpeed;
+		world.currentSpeed = 4;
+	},
+	onTaskTick:function(spec) {
+		game.UI.currentSpec = spec;
+		document.getElementById('blackBack').classList.add('d');
+		document.getElementById('specinfo').classList.add('d');
+		world.currentSpeed = 4;
+	},
+    onIdle:function(spec,task) {
+		world.currentSpeed = spec.data.worldSpeed;
+	},
+	onIdleTick:function(spec) {
+		document.getElementById('blackBack').classList.remove('d');
+	}
 };
+
+//////////////////////////////////////////////
 
 content.perks.c.p_hnst = {
     id:'p_hnst',

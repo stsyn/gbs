@@ -7,7 +7,7 @@ class work {
 		this.timeElapsed = 0;									//прошло времени
 		this.workers = specs;								
 		this.location = location;
-		this.object = object;
+		this.ministry = object;
 		this.id = taskId;
 		this.internalId = gottenId;
 		this.status = '';

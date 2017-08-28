@@ -12,6 +12,7 @@ function world_proto() {
 	this.data.weekDay = 0;
 	this.data.specs = 0;
 	this.data.taskStartTimeout = 240;
+	this.data.travelSpeed = 300;
 	this.roadmap = content.roadmap;
 	this.homecity = 'canterlot';
 };

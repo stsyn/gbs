@@ -560,8 +560,6 @@ input:checked + label, input:checked + label .b{background:#cfc !important}
 	color:#dd9;
 	font-weight:700;
 }
-.ux .c:not(.t) {
-	padding-right:0.5em;}
 .ux .task, .pad .linebar .task, .ux .ministry, .ux .info, .ux .level, .ux .report{
 	font-size:115%;
 	display:inline-block;
