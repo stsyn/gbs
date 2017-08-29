@@ -232,7 +232,7 @@ content.presetedSpecs.GB = {
 		horn: 1,
 		wings: 0,
         maneColor: '#ffd700',
-		mane: 2,
+		mane: 1,
         url: 'res/portraits/0.png'
         }
     },

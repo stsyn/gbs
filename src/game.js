@@ -2,10 +2,11 @@
 content.gameLaunchers.push(function() {
 	game.UI.currentSpec = world.specs[0];
 	utils.changeSpeed(3);
-	setTimeout(function() {if (world.currentSpeed == 0) utils.changeSpeed(1)}, 3000);
+	setTimeout(function() {if (world.currentSpeed == 0) utils.changeSpeed(1)}, 5000);
 	
 	game.player.ministry = world.ministries.OIA;
 	game.player.resources.money = world.ministries.OIA.money;
+	game.player.specs = [];
 	if (world.time == 0) utils.newDayTick();
 	if (world.specs[0].tasks.length > 0) content.perks.c.p_gb_sys.onTask();
 });
@@ -25,6 +26,55 @@ content.gameCreators.push(function() {
 		spec.messages.forEach(function (m,i,a){utils.getMessage(m).read = true});
 		spec.notifyLevel = -1;
 		document.getElementById('specinfo').classList.add('d');
+	};
+	game.UI.bottomSelection.addToTask = function (spec) {
+		let task = game.UI.taskHandling;
+		let work = content.works[task.id];
+		if (task.hasStarted && work.unstoppable) return;
+		
+		if (work.requiments(spec, task.ministry, task.location) <= 0) return;
+		else {
+			if (work.maxWorkers!=0 && task.workers.length==work.maxWorkers) return;
+			for (let i=0; i<task.workers.length; i++) if (task.workers[i] == spec.id) {
+				let popUp = {
+					text: strings.UI.messages.stopSolo,
+					buttons:[{
+						text: strings.UI.messages.removeSpecFromTask,
+						callback: function() {
+							utils.stopTask(task, spec, 1);
+							utils.closePopup()
+						}
+					},{
+						text: strings.UI.messages.cancel,
+						callback: function() {utils.closePopup();}
+					}]};
+				utils.callPopup(popUp);
+				return;
+			}
+			for (let i=0; i<game.UI.taskAddedWorkers.length; i++) if (game.UI.taskAddedWorkers[i] == spec.id) {
+				game.UI.taskAddedWorkers.splice(i, 1);
+				return;
+			}
+			game.UI.taskAddedWorkers.push(spec.id);
+		}
+	};
+	
+	
+	game.UI.bottomSelectionView = {};
+	game.UI.bottomSelectionView.view = function (spec) {
+		return Inferno.createElement('div', {className:'stat'},
+			Inferno.createElement('div', {className:'progress', style:'width:'+100*spec.attributes.health/spec.attributes.maxHealth+'%'}, null),
+			Inferno.createElement('div', {className:'prof label'}, parseInt(spec.attributes.health)+'/'+spec.attributes.maxHealth)
+		)
+	};
+	game.UI.bottomSelectionView.addToTask = function (spec) {
+		let task = game.UI.taskHandling;
+		let work = content.works[task.id];
+		let t = work.requiments(spec, task.ministry, task.location);
+		return Inferno.createElement('div', {className:'stat'},
+			Inferno.createElement('div', {className:'progress', style:'width:'+t+'%'}, null),
+			Inferno.createElement('div', {className:'prof label'}, t+'%')
+		)
 	};
 	
 	game.UI.tryReadMessages = function (spec) {
@@ -63,6 +113,21 @@ content.gameCreators.push(function() {
 			Inferno.createElement('div', {className:'t'}, 
 				(utils.ownedByPlayer(spec)?Inferno.createElement('div', {className:'task', style:'background-image:url('+content.works[utils.getCurrentWork(spec).id].iconUrl+');background-position: '+(-content.works[utils.getCurrentWork(spec).id].iconOffset*100)+'% 0'}, ' '):null)
 			)
+		)
+	};
+	
+	game.UI.generateSpecCard = function (spec, mode) {
+		let image;
+		if (spec.stats.portrait.url != '' && spec.stats.portrait.url != undefined) image = Inferno.createElement('img', {className:'p', src:spec.stats.portrait.url}, null);
+		else image = content.portraits[spec.stats.portrait.id].func(spec, 'p color');
+		return Inferno.createElement('div', {className:'s', onClick:(game.UI.bottomSelection[mode]!=undefined?function(){game.UI.bottomSelection[mode](spec)}:function(){return 0})},
+			image,
+			Inferno.createElement('div', {className:'task', style:'background-image:url('+content.works[utils.getCurrentWork(spec).id].iconUrl+');background-position: '+(-content.works[utils.getCurrentWork(spec).id].iconOffset*100)+'% 0'}, ' '),
+			Inferno.createElement('div', {className:'level', style:'background-position:'+(spec.stats.level*(-100))+'% 0'}, null),
+			Inferno.createElement('div', {className:'report', style:'background-position: '+(-100*(spec.notifyLevel+1))+'% 0'}, null),
+			Inferno.createElement('div', {className:'n'}, spec.stats.name),
+			Inferno.createElement('div', {className:'c'}, utils.getClassName(spec)),
+			game.UI.bottomSelectionView[mode](spec)
 		)
 	};
 	
@@ -139,30 +204,11 @@ content.gameCycles.main = function() {
 	//////////////////////////////////////////////////////
 	if (game.UI.bottomRenderCounter <= 0) {
 		game.UI.bottomRenderCounter = 60;
-		game.player.specs = [];
-		for (let i=0; i<world.specs.length; i++) {
-			if (world.specs[i].ministry == 'OIA' || world.specs[i].owner == 'OIA')
-				game.player.specs.push(world.specs[i]);
+		if (game.UI.bottomSelectionMode == 'view') {
+			utils.sortSpecList('OIA', game.player.specs, 'priorityOIA');
 		}
-		utils.sortSpecList('OIA', game.player.specs, 'priorityOIA');
-		game.UI.bottomList = game.player.specs.map(function (spec) {
-			let image;
-			if (spec.stats.portrait.url != '' && spec.stats.portrait.url != undefined) image = Inferno.createElement('img', {className:'p', src:spec.stats.portrait.url}, null);
-			else image = content.portraits[spec.stats.portrait.id].func(spec, 'p color');
-			return Inferno.createElement('div', {className:'s', onClick:(game.UI.bottomSelection[game.UI.bottomSelectionMode]!=undefined?function(){game.UI.bottomSelection[game.UI.bottomSelectionMode](spec)}:function(){return 0})},
-				image,
-				Inferno.createElement('div', {className:'task', style:'background-image:url('+content.works[utils.getCurrentWork(spec).id].iconUrl+');background-position: '+(-content.works[utils.getCurrentWork(spec).id].iconOffset*100)+'% 0'}, ' '),
-				Inferno.createElement('div', {className:'level', style:'background-position:'+(spec.stats.level*(-100))+'% 0'}, null),
-				Inferno.createElement('div', {className:'report', style:'background-position: '+(-100*(spec.notifyLevel+1))+'% 0'}, null),
-				Inferno.createElement('div', {className:'n'}, spec.stats.name),
-				Inferno.createElement('div', {className:'c'}, utils.getClassName(spec)),
-				Inferno.createElement('div', {className:'stat'}, 
-					Inferno.createElement('div', {className:'progress', style:'width:'+100*spec.attributes.health/spec.attributes.maxHealth+'%'}, null),
-					Inferno.createElement('div', {className:'prof label'}, parseInt(spec.attributes.health)+'/'+spec.attributes.maxHealth)
-				)
-			)
-		});
-		game.UI.bottomContainer = Inferno.createElement('div', {className:'container'}, game.UI.bottomList);
+		game.UI.bottomList = game.player.specs.map(function(spec) {return game.UI.generateSpecCard(spec, game.UI.bottomSelectionMode)});
+		game.UI.bottomContainer = Inferno.createElement('div', {className:'container speccardcontainer'}, game.UI.bottomList);
 		Inferno.render(game.UI.bottomContainer, document.getElementById("bottom"));
 	}
 	game.UI.bottomRenderCounter--; 
@@ -178,6 +224,125 @@ content.gameCycles.main = function() {
 		Inferno.render(game.UI.specsContainer, document.getElementById("specialists").getElementsByClassName('cc')[0]);
 	}
 	
+	//////////////////////////////////////////////////////
+	//				Окно выдачи заданий		
+	//////////////////////////////////////////////////////
+	
+	if (document.getElementById("selectSpecs").classList.contains('d')) {
+		let task = game.UI.taskHandling;
+		let work = content.works[task.id];
+		let c_city = content.cities[task.location];
+		if (task.value>=task.target) {
+			document.getElementById("selectSpecs").classList.remove('d');
+			game.UI.bottomSelectionMode = 'view';
+			game.UI.bottomRenderCounter = 0;
+		};
+		
+		let workersContainer = [];
+		for (let i=0; i<task.workers.length; i++) {
+			workersContainer.push(game.UI.generateSpecCard(world.specs[task.workers[i]], 'addToTask'));
+		}
+		
+		let selectedContainer = [];
+		for (let i=0; i<game.UI.taskAddedWorkers.length; i++) {
+			selectedContainer.push(game.UI.generateSpecCard(world.specs[game.UI.taskAddedWorkers[i]], 'addToTask'));
+		}
+		let tlist = task.workers.concat(game.UI.taskAddedWorkers);
+		
+		{game.UI.taskContainer = 
+		Inferno.createElement('div', {},
+			Inferno.createElement('div', {className:'pad sp_info'},
+				Inferno.createElement('div', {className:'line'}, 
+					Inferno.createElement('div', {className:'d', style:'text-align:center;font-size:120%'}, 
+						(task.internalId == undefined)?'Создать задание':'Изменить задание №'+task.internalId
+					)
+				),
+				'Необходимо специалистов: ',
+				work.minWorkers,
+				Inferno.createElement('br',{},null),
+				'Максимум специалистов: ',
+				(work.maxWorkers==0?'Неограничено':work.maxWorkers),
+				Inferno.createElement('br',{},null),
+				(task.internalId != undefined?Inferno.createElement('div', {className:'line linebar'},
+					Inferno.createElement('div', {className:'p',style:'width:'+utils.workPercent(task, true)+'%'}, null),
+					Inferno.createElement('div', {className:'d'}, work.name,
+						Inferno.createElement('div', {className:'c'}, utils.workPercent(task, false))
+					)
+				):null),
+				(tlist.length>=work.minWorkers?Inferno.createElement('div', {className:'line linebar'},
+					Inferno.createElement('div', {className:'p',style:'width:'+work.massRequiments(tlist, task.ministry, task.location)+'%'}, null),
+					Inferno.createElement('div', {className:'d'}, 'Эффективность',
+						Inferno.createElement('div', {className:'c'}, work.massRequiments(tlist, task.ministry, task.location)+'%')
+					)
+				):null)
+			),
+			(workersContainer.length!=0?Inferno.createElement('div', {className:'pad sp_info speccardcontainer'},
+				workersContainer
+			):null),
+			(selectedContainer.length!=0?Inferno.createElement('div', {className:'pad sp_info speccardcontainer'},
+				selectedContainer
+			):'Не выбраны дополнительные специалисты'),
+			((tlist.length>=work.minWorkers) && (task.internalId == undefined) && (work.massRequiments(tlist, task.ministry, task.location)>0)?
+				Inferno.createElement('div', {className:'b fs', onClick:function() {
+					utils.startTask(work, game.UI.taskAddedWorkers, task.ministry, task.location);
+					document.getElementById("selectSpecs").classList.remove('d');
+					game.UI.bottomSelectionMode = 'view';
+					game.UI.bottomRenderCounter = 0;
+				}}, 'Начать выполнение')
+			:null),
+			((!((work.unstoppable) && (task.hasStarted)) || !task.hasStarted) && (game.UI.taskAddedWorkers.length>0) && (task.internalId != undefined)) && (work.massRequiments(tlist, task.ministry, task.location)>0?
+				Inferno.createElement('div', {className:'b fs', onClick:function() {
+					utils.startTask(content.works.w_sys_companyHandler, game.UI.taskAddedWorkers, task.ministry, task.location);
+					console.log(world.tasks);
+					for (let i=0; i<world.tasks.length; i++) {
+						if (world.tasks[i] == undefined) continue;
+						if (world.tasks[i].id != 'w_sys_companyHandler') continue;
+						if (world.tasks[i].data.taskId == undefined) {
+							world.tasks[i].data.taskId = task.internalId;
+							break;
+						};
+					}
+					document.getElementById("selectSpecs").classList.remove('d');
+					game.UI.bottomSelectionMode = 'view';
+					game.UI.bottomRenderCounter = 0;
+				}}, 'Добавить специалистов на задание')
+			:null),
+			(!((work.unstoppable) && (task.hasStarted)) && (task.internalId != undefined)?
+				Inferno.createElement('div', {className:'b fs', onClick:function() {
+					let popUp = {
+						text: strings.UI.messages.stop,
+						buttons:[{
+							text: strings.UI.messages.removeAllSpecsFromTask,
+							callback: function() {
+								task.workers.forEach(function(w, i, a) {utils.stopTask(task, world.specs[w], 1)});
+								utils.closePopup()
+							}
+						},{
+							text: strings.UI.messages.cancel,
+							callback: function() {utils.closePopup();}
+						}]};
+					utils.callPopup(popUp);
+				}}, 'Отменить задание')
+			:null),
+			Inferno.createElement('div', {className:'b fs', onClick:function() {
+				if (game.UI.taskBackHandlerType == 'none') {
+					document.getElementById("selectSpecs").classList.remove('d');
+					game.UI.bottomSelectionMode = 'view';
+					game.UI.bottomRenderCounter = 0;
+				}
+				else if (game.UI.taskBackHandlerType == 'recreate') {
+					document.getElementById("selectSpecs").classList.remove('d');
+					game.UI.bottomSelectionMode = 'view';
+					game.UI.bottomRenderCounter = 0;
+					utils.prepareTaskWindow(task.id, task.location, task.ministry);
+				}
+			}}, strings.UI.messages.cancel)
+		);}
+		
+		Inferno.render(game.UI.taskContainer, document.getElementById("selectSpecs").getElementsByClassName('cc')[0]);
+	}
+	
+		
 	//////////////////////////////////////////////////////
 	//					Окно городов		
 	//////////////////////////////////////////////////////
@@ -228,6 +393,22 @@ content.gameCycles.main = function() {
 			)
 		);
 		
+			
+		game.UI.hasCityWorks = false;
+		game.UI.cityWorks = content.worklists.perCity.map(function(work) {
+			game.UI.hasCityWorks = true;
+			
+			return Inferno.createElement('div', {className:'line linebar dd b', onClick:function() {
+				utils.prepareTaskWindow(work, l_city.id, game.player.ministry.id);
+			}}, 
+				Inferno.createElement('div', {className:'d'}, 
+					Inferno.createElement('div', {className:'task', style:'background-image:url('+work.iconUrl+');background-position: '+(-work.iconOffset*100)+'% 0'}, ' '),
+					work.name
+				),
+				Inferno.createElement('div', {className:'e'},work.description)
+			)
+		});
+		
 		game.UI.citySpecDivList = game.UI.specsInCity.map(game.UI.generateSpecLine);
 			{ 
 			game.UI.cityProfile = 
@@ -260,6 +441,9 @@ content.gameCycles.main = function() {
 								Inferno.createElement('span', {className:'c'}, utils.getCityActualTech(l_city))
 							)
 						)
+					):null),
+					(game.UI.hasCityWorks?Inferno.createElement('div', {className:'pad sp_info'},
+						game.UI.cityWorks
 					):null),
 					Inferno.createElement('div', {className:'pad sp_inv'},
 						Inferno.createElement('div', {className:'table r ux'}, 
@@ -361,15 +545,7 @@ content.gameCycles.main = function() {
 						Inferno.createElement('div', {className:'table r ux'}, 
 							Inferno.createElement('div', {className:'t3'},game.UI.minSpecDivList)
 							)
-						):null)/*,
-					Inferno.createElement('div', {className:'pad sp_info'},
-						Inferno.createElement('div', {className:'pad sp_half'}, 
-							(game.UI.specPerks.length == 0?strings.UI.noPerks:game.UI.specPerks)
-						),
-						Inferno.createElement('div', {className:'pad sp_half'},
-							l_notice
-						)
-					)*/
+						):null)
 				);
 		}
 		Inferno.render(game.UI.minProfile, document.getElementById("ministries").getElementsByClassName('p34part')[0]);
@@ -407,9 +583,9 @@ content.gameCycles.main = function() {
 		
 		game.UI.hasWorks = false;
 		game.UI.specWorks = content.worklists.withSpec.map(function(work) {
-			if (work.requiments(l_spec) > 0) {
+			if (work.requiments(l_spec, l_spec.ministry, l_spec.location) > 0) {
 				game.UI.hasWorks = true;
-				let resList = '', cost = work.calcCost(l_spec, l_spec.ministry, l_spec.location);
+				let resList = '', cost = work.calcCost([l_spec], l_spec.ministry, l_spec.location);
 				if (cost!={}) {
 					let unf = '';
 					for (let k in cost) {
@@ -436,11 +612,11 @@ content.gameCycles.main = function() {
 						}]
 					})
 				}}, 
-					Inferno.createElement('div', {className:'p',style:'width:'+work.requiments(l_spec)+'%'}, null),
+					Inferno.createElement('div', {className:'p',style:'width:'+work.requiments(l_spec, l_spec.ministry, l_spec.location)+'%'}, null),
 					Inferno.createElement('div', {className:'d'}, 
 						Inferno.createElement('div', {className:'task', style:'background-image:url('+work.iconUrl+');background-position: '+(-work.iconOffset*100)+'% 0'}, ' '),
 						work.name,
-						Inferno.createElement('div', {className:'c'}, work.requiments(l_spec)+'%')
+						Inferno.createElement('div', {className:'c'}, work.requiments(l_spec, l_spec.ministry, l_spec.location)+'%')
 					),
 					Inferno.createElement('div', {className:'e'},work.description)
 				)
@@ -453,7 +629,7 @@ content.gameCycles.main = function() {
 			if (work.maxWorkers == 0) {
 				if (work.requiments(l_spec) > 0) {
 					game.UI.hasPerWorks = true;
-					let resList = '', cost = work.calcCost(l_spec, l_spec.ministry, l_spec.location);
+					let resList = '', cost = work.calcCost([l_spec], l_spec.ministry, l_spec.location);
 					if (cost!={}) {
 						let unf = '';
 						for (let k in cost) {
@@ -478,68 +654,77 @@ content.gameCycles.main = function() {
 							}]
 						})
 					}}, 
-						Inferno.createElement('div', {className:'p',style:'width:'+work.requiments(l_spec)+'%'}, null),
+						Inferno.createElement('div', {className:'p',style:'width:'+work.requiments(l_spec, l_spec.ministry, l_spec.location)+'%'}, null),
 						Inferno.createElement('div', {className:'d'}, 
 							Inferno.createElement('div', {className:'task', style:'background-image:url('+work.iconUrl+');background-position: '+(-work.iconOffset*100)+'% 0'}, ' '),
 							work.name,
-							Inferno.createElement('div', {className:'c'}, work.requiments(l_spec)+'%')
+							Inferno.createElement('div', {className:'c'}, work.requiments(l_spec, l_spec.ministry, l_spec.location)+'%')
 						),
 						Inferno.createElement('div', {className:'e'},work.description)
 					)
 				}
 			}
-			
-			
 		});
 		
 		game.UI.currentWorks = l_spec.tasks.map(function(workId) {
 			let task = world.tasks[workId];
 			let work = content.works[task.id];
 			return Inferno.createElement('div', {className:'line linebar dd b', onClick:(utils.ownedByPlayer(l_spec)?function() {
-					let popUp
-					if (task.workers.length == 1) 
-						popUp = {
-							text: strings.UI.messages.stopSolo,
-							buttons:[{
-								text: strings.UI.messages.removeSpecFromTask,
-								callback: function() {
-									utils.stopTask(task, l_spec, 1);
-									utils.closePopup()
-								}
-							},{
-								text: strings.UI.messages.cancel,
-								callback: function() {utils.closePopup();}
-							}]};
-					else 
-						popUp = {
-							text: strings.UI.messages.stop,
-							buttons:[{
-								text: strings.UI.messages.removeSpecFromTask,
-								callback: function() {
-									utils.stopTask(task, l_spec, 1);
-									utils.closePopup()
-								}
-							},{
-								text: strings.UI.messages.removeAllSpecsFromTask,
-								callback: function() {
-									task.workers.forEach(function(w, i, a) {utils.stopTask(task, world.specs[w], 1)});
-									utils.closePopup()
-								}
-							},{
-								text: strings.UI.messages.cancel,
-								callback: function() {utils.closePopup();}
-							}]};
-					if (work.unstoppable) {
-						popUp = {
-						text: strings.UI.messages.cannotStop,
-						buttons:[{
-							text: strings.UI.messages.ok,
-							callback: function() {
-								utils.closePopup()
-							}
-						}]};
+					if (work.maxWorkers != 1) {
+						game.UI.taskHandling = task;
+						document.getElementById("selectSpecs").classList.add('d');
+						game.UI.taskBackHandlerType = 'none';
+						game.UI.bottomSelectionMode = 'addToTask';
+						utils.sortSpecList(game.player.ministry.id, game.player.specs, 'workPriority');
+						game.UI.bottomRenderCounter = 0;
+						game.UI.taskAddedWorkers = [];
 					}
-					utils.callPopup(popUp);
+					else {
+						let popUp;
+						if (task.workers.length == 1) 
+							popUp = {
+								text: strings.UI.messages.stopSolo,
+								buttons:[{
+									text: strings.UI.messages.removeSpecFromTask,
+									callback: function() {
+										utils.stopTask(task, l_spec, 1);
+										utils.closePopup()
+									}
+								},{
+									text: strings.UI.messages.cancel,
+									callback: function() {utils.closePopup();}
+								}]};
+						else 
+							popUp = {
+								text: strings.UI.messages.stop,
+								buttons:[{
+									text: strings.UI.messages.removeSpecFromTask,
+									callback: function() {
+										utils.stopTask(task, l_spec, 1);
+										utils.closePopup()
+									}
+								},{
+									text: strings.UI.messages.removeAllSpecsFromTask,
+									callback: function() {
+										task.workers.forEach(function(w, i, a) {utils.stopTask(task, world.specs[w], 1)});
+										utils.closePopup()
+									}
+								},{
+									text: strings.UI.messages.cancel,
+									callback: function() {utils.closePopup();}
+								}]};
+						if (work.unstoppable) {
+							popUp = {
+							text: strings.UI.messages.cannotStop,
+							buttons:[{
+								text: strings.UI.messages.ok,
+								callback: function() {
+									utils.closePopup()
+								}
+							}]};
+						}
+						utils.callPopup(popUp);
+					}
 				}:null)}, 
 				Inferno.createElement('div', {className:'p',style:'width:'+utils.workPercent(task, true, l_spec)+'%'}, null),
 				Inferno.createElement('div', {className:'d'}, 
@@ -685,7 +870,7 @@ content.gameCycles.main = function() {
 					)),
 					((utils.ownedByPlayer(l_spec)||utils.getSpecSecrecy(l_spec)<consts.visibility[4])?Inferno.createElement('div', {className:'pad sp_info'}, game.UI.currentWorks):null),
 					(utils.ownedByPlayer(l_spec)?Inferno.createElement('div', {className:'pad sp_info'}, (game.UI.hasWorks?game.UI.specWorks:strings.UI.noWork)):null),
-					Inferno.createElement('div', {className:'pad sp_info'}, (game.UI.hasPerWorks?game.UI.specPerWorks:strings.UI.noWork)),
+					Inferno.createElement('div', {className:'pad sp_info'}, (game.UI.hasPerWorks?game.UI.specPerWorks:strings.UI.noPerWork)),
 					((game.UI.specNotes==0 || !utils.ownedByPlayer(l_spec))?null:Inferno.createElement('div', {className:'ux pad sp_info table st'}, 
 						Inferno.createElement('div', {className:'t3'},game.UI.specNotes)
 					))

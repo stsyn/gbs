@@ -10,20 +10,27 @@ content.perks.c.p_gb_sys = {
 		spec.shadow.satisfactionBonus = -100000;
 		spec.attributes.payout = 0;},
     onTask:function(spec,task) {
-		spec.data.worldSpeed = world.currentSpeed;
+		console.log(world.currentSpeed, spec.data.worldSpeed);
+		if (world.currentSpeed!=4) spec.data.worldSpeed = world.currentSpeed;
 		world.currentSpeed = 4;
 	},
 	onTaskTick:function(spec) {
 		game.UI.currentSpec = spec;
 		document.getElementById('blackBack').classList.add('d');
 		document.getElementById('specinfo').classList.add('d');
+		document.getElementById('specinfo').style.zIndex = 5000;
+		document.getElementById('specinfo').childNodes[1].style.zIndex = 6999;
 		world.currentSpeed = 4;
 	},
     onIdle:function(spec,task) {
-		world.currentSpeed = spec.data.worldSpeed;
+		if (spec.location == world.homecity) {
+			world.currentSpeed = spec.data.worldSpeed;
+			document.getElementById('blackBack').classList.remove('d');
+			document.getElementById('specinfo').style.zIndex = 1;
+			document.getElementById('specinfo').childNodes[1].style.zIndex = 1;
+		}
 	},
 	onIdleTick:function(spec) {
-		document.getElementById('blackBack').classList.remove('d');
 	}
 };
 
@@ -355,7 +362,7 @@ content.perks.perkVarPool.push({
 
 content.perks.c.p_drnk = {
     id:'p_drnk',
-    name:'Зависимый',
+    name:'Алкоголик',
     description:'',
     secrecy:75,
     whenGet:function(spec) {

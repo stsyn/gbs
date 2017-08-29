@@ -25,6 +25,7 @@ class city {
 	constructor(template) {
 		this.owner = template.owner;
 		this.locatedSpecs = [];
+		this.id = template.id;
 		
 		this.messages = [];
 		this.notifyLevel = -1;

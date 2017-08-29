@@ -14,3 +14,9 @@ plapi.mods.push(function() {
 	};
 	whats_wrong_with_you_youtube();
 });
+
+content.perks.perkVarPool.push({
+    id:'pv_you_are_fucking_drunk_bastard',
+    chanceCalc: function(world,spec) {return 100;},
+    list:['p_drnk']
+});

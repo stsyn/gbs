@@ -13,6 +13,38 @@ content.works.w_sys_dead = {
 	name:'Мертв'
 };
 
+content.works.w_sys_companyHandler = {
+	id:'w_sys_companyHandler',
+	iconUrl:'res/icons/tasks.png',
+	iconOffset:3,
+	name:'Ожидание',
+	description:'Специалист ожидает введения в курс дела остальными специалистами.',
+	target:1,
+	maxWorkers:0,
+	minWorkers:1,
+	onlyOne:false,
+	updateInterval:1,
+	data:{
+	},
+	calcCost:function(spec, ministry, location) {return {};},
+	requiments:function(spec) {return 100;},
+	whenStart:function(taskId) {return 0},
+	whenStartPerSpec:function(t, spec) {return 0},
+	whenComplete:function(t) {
+		if (world.tasks[t.data.taskId] == undefined) return;
+		for (let i=0; i<t.workers.length; i++) {
+			world.specs[t.workers[i]].tasks.unshift(t.data.taskId);
+			world.tasks[t.data.taskId].workers.push(t.workers[i]);
+		}
+		//utils.removeTask(t);
+	},
+	update:function(t) {utils.completeTask(t)},
+	updatePerSpec:function(task, worker) {return 0},
+	whenStopped:function(taskId) {return 0;},
+	whenStoppedPerSpec:function(taskId) {return 0;},
+	whenFailed:function(taskId) {return 0}
+}
+
 content.works.w_studying = {
 	id:'w_studying',
 	iconUrl:'res/icons/tasks.png',
@@ -29,8 +61,7 @@ content.works.w_studying = {
 		return {money:1000};
 	},
 	requiments:function(spec) {
-		//return parseInt(-40+60*(3-utils.getLevel(spec)));
-		return 1;
+		return parseInt(-40+60*(3-utils.getLevel(spec)));
 	},
 	whenStart:function(taskId) {return 0},
 	whenStartPerSpec:function(task) {return 0},
@@ -52,12 +83,12 @@ content.works.w_movement = {
 	iconUrl:'res/icons/tasks.png',
 	iconOffset:3,
 	name:'Перемещение',
-	description:'Передвижение из одного города в другой',
+	description:'Передислокация специалиста из одного города в другой',
 	target:1,
-	maxWorkers:1,
+	maxWorkers:0,
 	minWorkers:1,
 	onlyOne:false,
-	unstoppable:true,
+	//unstoppable:true,
 	updateInterval:utils.time2ms({hours:1}),
 	data: {
 		days:'Дней'
@@ -66,7 +97,13 @@ content.works.w_movement = {
 	calcCost:function(spec, ministry, location) {
 		return {text: parseInt(content.roadmap[spec.location][t.location]*world.data.travelSpeed/60)+this.data.days};
 	},
-	requiments:function(spec) {
+	requiments:function(spec, ministry, location) {
+		if (spec.location == location) return 0;
+		return 100;
+	},
+	massRequiments:function(ids, ministry, location) {
+		let s = world.specs[ids[0]].location;
+		for (let i=1; i<ids.length; i++) if (s != world.specs[ids[i]].location) return 0;
 		return 100;
 	},
 	whenStart:function(taskId) {return 0},
@@ -74,7 +111,8 @@ content.works.w_movement = {
 		t.target = content.roadmap[spec.location][t.location]*world.data.travelSpeed;
 	},
 	whenComplete:function(t) {
-		world.specs[t.workers[0]].location = t.location;
+		for (let i=0; i<t.workers.length; i++)
+			world.specs[t.workers[i]].location = t.location;
 	},
 	update:function(t) {
 		t.value+=60;
@@ -101,9 +139,10 @@ content.works.w_hire = {
 	},
 	
 	calcCost:function(spec, ministry, location) {
-		let x = (100-world.ministries[spec.ministry].stats.loyalty-(100-utils.getSpecSecrecy(spec))*3);
+		let x = (100-world.ministries[spec[0].ministry].stats.loyalty-(100-utils.getSpecSecrecy(spec[0]))*3);
 		if (x<0) return {text:this.data.string};
-		return {money:parseInt(spec.attributes.payout*x/2), text:this.data.string};
+		x = Math.pow(x, 2);
+		return {money:parseInt(spec[0].attributes.payout*x/10), text:this.data.string};
 	},
 	requiments:function(spec) {
 		if (spec.ministry == game.player.ministry.id) return 0;
@@ -114,8 +153,8 @@ content.works.w_hire = {
 	whenStart:function(taskId) {return 0},
 	whenStartPerSpec:function(t, spec) {return 0},
 	whenComplete:function(t) {
-		console.log(t);
 		utils.spec2ministry(t.workers[0], t.ministry);
+		game.UI.bottomRenderCounter = 0;
 	},
 	update:function(t) {utils.completeTask(t)},
 	updatePerSpec:function(task, worker) {return 0},
@@ -141,7 +180,7 @@ content.works.w_intStudying = {
 	},
 	
 	calcCost:function(spec, ministry, location) {
-		return {money:parseInt(1000*(50-world.ministries.MAS.stats.part)*(1.33-utils.getIntellect(spec)))};
+		return {money:parseInt(1000*(50-world.ministries.MAS.stats.part)*(1.33-utils.getIntellect(spec[0])))};
 	},
 	requiments:function(spec) {
 		if (utils.getLevel(spec) < 2) return -1;
@@ -196,7 +235,7 @@ content.works.w_endStudying = {
 	},
 	
 	calcCost:function(spec, ministry, location) {
-		return {money:parseInt(1000*(50-world.ministries.MoA.stats.part)*(1.33-utils.getEndurance(spec)))};
+		return {money:parseInt(1000*(50-world.ministries.MoA.stats.part)*(1.33-utils.getEndurance(spec[0])))};
 	},
 	requiments:function(spec) {
 		if (spec.attributes.health/spec.attributes.maxHealth <= 0.20) return -1;
@@ -252,7 +291,7 @@ content.works.w_chrStudying = {
 	updateInterval:utils.time2ms({date:1}),
 	
 	calcCost:function(spec, ministry, location) {
-		return {money:parseInt(1000*(50-world.ministries.MI.stats.part)*(1.33-utils.getCharisma(spec)))};
+		return {money:parseInt(1000*(50-world.ministries.MI.stats.part)*(1.33-utils.getCharisma(spec[0])))};
 	},
 	requiments:function(spec) {
 		if (utils.getLevel(spec) < 2) return -1;
@@ -294,6 +333,7 @@ function m_init() {
 	content.worklists.withSpec.push(content.works.w_endStudying);
 	content.worklists.withSpec.push(content.works.w_chrStudying);
 	content.worklists.perSpec.push(content.works.w_hire);
+	content.worklists.perCity.push(content.works.w_movement);
 	
 	return 0;
 }

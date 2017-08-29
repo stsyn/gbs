@@ -2,7 +2,7 @@
 function consts_proto() {
 	this.baseSpeed = 60;	//default 48
 	this.fps = 30;
-	this.gameSpeed = [0, this.baseSpeed/3, this.baseSpeed, this.baseSpeed*4, this.baseSpeed*40] //per second
+	this.gameSpeed = [0, this.baseSpeed/3, this.baseSpeed, this.baseSpeed*4, this.baseSpeed*20] //per second
 	this.specUpdateInterval = 12*60;
 	this.sleepOverWork = 4;
 	this.workOverflow = 6;
@@ -349,7 +349,7 @@ var utils = {
 	levelUp(spec) {
 		spec.stats.experience -= consts.nextLevel[spec.stats.level];
 		spec.stats.level++;
-		utils.addNotify('specs', [spec.id], 2, strings.UI.messages.levelUpped);
+		if (utils.ownedByPlayer(spec)) utils.addNotify('specs', [spec.id], 2, strings.UI.messages.levelUpped);
 	},
 	
 	getCurrentWork(spec) {
@@ -437,10 +437,11 @@ var utils = {
 		let const1 = 1.2;
 		let const2 = 1.12;
 		let v = Math.max(utils.getCharisma(spec),utils.getIntellect(spec),utils.getEndurance(spec));
-		let t = spec.attributes.payout; 
-		spec.attributes.payout = parseInt(
+		let x = parseInt(
 		100 * Math.pow(const1,1/(const2-v)) * (1+utils.getLevel(spec)/6+Math.pow(spec.attributes.involvement, 1.5)/150));
-		if (spec.attributes.payout/t < 0.95) spec.attributes.payout = parseInt(t*0.95);
+		if (x < spec.attributes.currentPayout*1.1) x = parseInt(x*1.005);
+		else if (x/spec.attributes.payout < 0.99) x = parseInt(spec.attributes.payout*0.99);
+		spec.attributes.payout = x;
 	},
 	
 	generateMaxHealth(spec) {
@@ -448,10 +449,19 @@ var utils = {
 	},
 	
 	sortSpecList(ministry, specList, type) {
+		if (specList == game.player.specs) {
+			game.player.specs = [];
+			for (let i=0; i<world.specs.length; i++) {
+				if (world.specs[i].ministry == 'OIA' || world.specs[i].owner == 'OIA')
+					game.player.specs.push(world.specs[i]);
+			}
+			specList = game.player.specs;
+		}
 		let sortType = {};
 		sortType.priority = function (a, b) {
 			let m = world.ministries[ministry];
 			if (m.owner == a) return -1;
+			if (m.owner == b) return 1;
 			if (m.priorities(world.specs[a]) > m.priorities(world.specs[b])) return -1;
 			return 1;
 		};
@@ -461,15 +471,30 @@ var utils = {
 			if (m.priorities(a) > m.priorities(b)) return -1;
 			return 1;
 		};
+		sortType.workPriority = function (a, b) {
+			if (a.internalId == 'GB') return 1;
+			if (b.internalId == 'GB') return -1;
+			if ((a.tasks.length == 0) == (b.tasks.length == 0)) {
+				let task = game.UI.taskHandling;
+				let work = content.works[task.id];
+				if (work.requiments(a, task.ministry, task.location) > work.requiments(b, task.ministry, task.location)) return -1;
+				else if (work.requiments(a, task.ministry, task.location) == work.requiments(b, task.ministry, task.location)) return 0;
+				return 1;
+			};
+			if (a.tasks.length == 0) return -1;
+			return 1;
+		};
 		sortType.name = function (a, b) {
 			let m = world.ministries[ministry];
 			if (m.owner == a) return -1;
+			if (m.owner == b) return 1;
 			if (world.specs[a].stats.name < world.specs[b].stats.name) return -1;
 			return 1;
 		};
 		sortType.nameOIA = function (a, b) {
 			let m = world.ministries[ministry];
 			if (m.owner == a.id) return -1;
+			if (m.owner == b.id) return 1;
 			if (a.stats.name < b.stats.name) return -1;
 			return 1;
 		};
@@ -542,8 +567,8 @@ var utils = {
 		//только для Голденблада
 		if (spec.internalId == 'GB') {
 			spec.counters.main += consts.gameSpeed[3];
-			if (world.currentSpeed == 1) spec.attributes.health-=0.05;
-			if (world.currentSpeed == 3 && spec.attributes.health < spec.attributes.maxHealth) spec.attributes.health+=0.01;
+			if (world.currentSpeed == 1) spec.attributes.health-=0.1;
+			if (world.currentSpeed == 3 && spec.attributes.health < spec.attributes.maxHealth) spec.attributes.health+=0.05;
 			if (spec.stats.health<=0) utils.deadSpec(spec);
 			return;
 		}
@@ -582,6 +607,9 @@ var utils = {
 					for (let j=0; j<spec.perks.length; j++) {
 						content.perks.c[spec.perks[j]].onIdle(spec, (res+1)/2);
 					}
+					
+					if ((spec.internalId == 'GB') && (spec.location != world.homecity) && (spec.tasks.length == 0))
+						utils.startTask(content.works.w_movement, [spec.id], spec.ministry, world.homecity);
 					break;
 				}
 			}
@@ -595,6 +623,10 @@ var utils = {
 		utils.destroyWork(work, 3);
 	},
 
+	removeTask(work) {
+		utils.destroyWork(work, 8);
+	},
+	
 	completeTask(work) {
 		let pat = content.works[work.id]; 
 		pat.whenComplete(work);
@@ -626,7 +658,7 @@ var utils = {
 		}
 		spec.tasks.splice(i,1);
 		
-		if ((spec.internalId == 'GB') && (location != world.homecity))
+		if ((spec.internalId == 'GB') && (spec.location != world.homecity) && (spec.tasks.length == 0))
 			utils.startTask(content.works.w_movement, [spec.id], spec.ministry, world.homecity);
 		
 		if (work.workers.length < pat.minWorkers) {
@@ -642,8 +674,13 @@ var utils = {
 	workPercent(work, nums, spec) {
 		let s = parseInt(100*work.value/work.target);
 		let n;
-		for (n=0; n<work.workers.length; n++) if (work.workers[n] == spec.id) break;
-		if ((work.separated && !work.hasStartedPerSpec[n]) || (!work.separated && !work.hasStarted)) return (nums?0:'В очереди');
+		if (spec != undefined) {
+			for (n=0; n<work.workers.length; n++) if (work.workers[n] == spec.id) break;
+			if (!work.hasStartedPerSpec[n]) return (nums?0:'В очереди');
+		}
+		else {
+			if (!work.hasStarted) return (nums?0:'В очереди');
+		}
 		if (s<0) return (nums?0:'Выполняется...');
 		return (nums?s:s+'%');
 	},
@@ -665,7 +702,7 @@ var utils = {
 				if (utils.stopTask(work, world.specs[worker], 2)) return;
 			}
 			else if (world.specs[worker].tasks[0] == work.internalId) {
-				if ((work.id != 'w_movement') && (world.specs[worker].location != work.location)) {
+				if ((work.id != 'w_movement') && (work.id != 'w_sys_companyHandler') && (world.specs[worker].location != work.location)) {
 					utils.startTask(content.works.w_movement, [worker], world.specs[worker].ministry, work.location, true);
 				}
 				else working++;
@@ -673,6 +710,10 @@ var utils = {
 		});
 		if (working>=pat.minWorkers && !work.hasStarted) {
 			utils.startWork(pat, work);
+			work.timeBeforeUpdate += pat.updateInterval;
+			return;
+		}
+		if (working>=pat.minWorkers) {
 			work.workers.forEach(function (worker, i, a) {
 				if (world.specs[worker].tasks[0] == work.internalId) {
 					if (!work.hasStartedPerSpec[i]) {
@@ -685,8 +726,6 @@ var utils = {
 					}
 				}
 			});
-			work.timeBeforeUpdate += pat.updateInterval;
-			return;
 		}
 		
 		//обновление работы
@@ -713,10 +752,15 @@ var utils = {
 	},
 	
 	startTask(task, spec, ministry, location, insertBefore) {
+		let maxTimeout = 0;
+		for (let j=0; j<spec.length; j++) {
+			let s = world.specs[spec[j]].location;
+			if (maxTimeout<Math.pow(world.roadmap[world.homecity][s],0.75)*world.data.taskStartTimeout) maxTimeout = Math.pow(world.roadmap[world.homecity][s],0.75)*world.data.taskStartTimeout;
+		}
+		let timeout = maxTimeout;
 		let i;
 		for (i=0; world.tasks[i]!=undefined; i++) 0;
-		let timeout = Math.pow(world.roadmap[world.homecity][location],0.75)*world.data.taskStartTimeout;
-		if (task.id == content.works.w_movement) timeout = 0;
+		if (insertBefore) timeout = 0;
 		world.tasks[i] = new work(task.id, spec, location, ministry, i, timeout);
 		let workO = world.tasks[i];
 		for (let s=0; s<spec.length; s++) {
@@ -726,6 +770,63 @@ var utils = {
 		}
 	},
 	
+	
+	prepareTaskWindow(task, location, ministry) {
+		let popUp = {buttons:[]};
+		game.UI.taskAddedWorkers = [];
+		for (let i=0; i<world.tasks.length; i++) {
+			if (world.tasks[i] != undefined) {
+				if (world.tasks[i].id == task.id && world.tasks[i].location == location && world.tasks[i].ministry == ministry && !world.tasks[i].unstoppable) {
+					if (content.works[world.tasks[i].id].onlyOne) {
+						//switch to current work
+						game.UI.taskHandling = world.tasks[i];
+						document.getElementById("selectSpecs").classList.add('d');
+						game.UI.taskBackHandlerType = 'none';
+						game.UI.bottomSelectionMode = 'addToTask';
+						utils.sortSpecList(game.player.ministry.id, game.player.specs, 'workPriority');
+						game.UI.bottomRenderCounter = 0;
+						return;
+					}
+					else {
+						popUp.buttons.push({
+							text:'Присоединить к заданию №'+i,
+							callback:function() {
+								game.UI.taskHandling = world.tasks[i];
+								document.getElementById("selectSpecs").classList.add('d');
+								game.UI.bottomRenderCounter = 0;
+								game.UI.bottomSelectionMode = 'addToTask';
+								utils.sortSpecList(game.player.ministry.id, game.player.specs, 'workPriority');
+								//switch to work
+							}
+						});
+						game.UI.taskBackHandlerType = 'recreate';
+					}
+				}
+			}
+		}
+		
+		if (popUp.buttons.length == 0) {
+			//create new
+			game.UI.taskHandling = {};
+			game.UI.taskHandling.id = task.id;
+			game.UI.taskHandling.location = location;
+			game.UI.taskHandling.ministry = ministry;
+			game.UI.taskHandling.workers = [];
+			document.getElementById("selectSpecs").classList.add('d');
+			game.UI.bottomRenderCounter = 0;
+			game.UI.bottomSelectionMode = 'addToTask';
+			game.UI.taskBackHandlerType = 'none';
+			utils.sortSpecList(game.player.ministry.id, game.player.specs, 'workPriority');
+		}
+		else {
+			popUp.text = 'Выберите, к какому подобному заданию добавить специалиста, или начните новое задание.';
+			popUp.buttons.push({
+				text:strings.UI.messages.cancel,
+				callback:function() {utils.closePopup()}
+			});
+			utils.callPopup(popUp);
+		}
+	},
 	
 	ownedByPlayer(spec) {
 		return (spec.owner == game.player.ministry.id || spec.ministry == game.player.ministry.id);
@@ -752,6 +853,12 @@ var utils = {
 			*Few weeks after*
 			
 			Well, I changed my mind. I should add resources and stuff.
+		*/
+		
+		/*
+			*Few days after*
+			
+			Yeah, someday there will be some code.
 		*/
 	},
 	
@@ -792,6 +899,9 @@ var utils = {
 		if (m.specs.length < 8) {
 			if (m.stats.loyalty > -40+20*m.specs.length) m.stats.loyalty = 20*m.specs.length-40;
 		}
+		m.specs.forEach(function (s,i,a){
+			world.specs[s].stats.experience += parseInt((10-(i<10?i:9))/4)*2;
+		});
 		if (m.stats.part<11 && m.stats.loyalty>50) m.stats.loyalty -= 1;
 		if (m.stats.part<6) m.stats.loyalty -= 1;
 		if (m.stats.loyalty <= 0) {

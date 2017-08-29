@@ -172,7 +172,6 @@ table.r td {text-align:center}
 	width:96%;
 	margin:1%;
 	padding:1%;
-	display:none;
 	background:#333;}
 .de {
 	display:inline-block;
@@ -233,11 +232,11 @@ input:checked + label, input:checked + label .b{background:#cfc !important}
 #bottom {
 	color:#ccc;
 	transition:.15s;
-	height:21%;
-	max-height:21%;
+	height:23.5%;
+	max-height:23.5%;
 	width:98%;
 	overflow-y:scroll;
-	padding:0.63% 1%;
+	padding:0 1%;
 	z-index:1;
 	position:relative;
 	top:calc(71.5%)}
@@ -259,27 +258,29 @@ input:checked + label, input:checked + label .b{background:#cfc !important}
 	line-height:270%;
 	font-size:200%;
 }
-#bottom .s {
-	width:9.25%;
-	min-width:9.25%;
-	height:100%;
-	margin-right:0.73%;
-	margin-bottom:0.73%;
+.speccardcontainer .s {
+	width: 7.95em;
+    height: 10.5em;
+	margin-right:0.74%;
+	margin-bottom:0.55%;
+	margin-top:0.55%;
 	display:inline-block;
 	position:relative;
 	background: #333;
 	cursor:pointer;
 }
-#bottom .s.al {background: #633;}
-#bottom .s:hover {background: #363;}
-#bottom .s .p {
+
+.pad.speccardcontainer .s, .pad.speccardcontainer .s .p{background: #000;}
+.speccardcontainer .s.al, .pad.speccardcontainer .s.al .p{background: #633;}
+.speccardcontainer .s:hover, .pad.speccardcontainer .s:hover .p{background: #363;}
+.speccardcontainer .s .p{
 	position:absolute;
 	left:8%;
 	top:5%;
 	height:64%;
 	width:84%;
 }
-#bottom .s .n {
+.speccardcontainer .s .n {
 	position:absolute;
 	left:8%;
 	bottom:31%;
@@ -290,9 +291,10 @@ input:checked + label, input:checked + label .b{background:#cfc !important}
 	line-height:120%;
 	background-image: linear-gradient(to top, rgba(51,51,51,.7) 40%, rgba(51,51,51,0));
 }
-#bottom .s.al .n {background-image: linear-gradient(to top, rgba(102,51,51,.7) 40%, rgba(102,51,51,0));}
-#bottom .s:hover .n {background-image: linear-gradient(to top, rgba(51,102,51,.7) 40%, rgba(51,102,51,0));}
-#bottom .s .stat {
+.pad.speccardcontainer .s .n {background-image: linear-gradient(to top, rgba(0,0,0,.7) 40%, rgba(0,0,0,0));}
+.speccardcontainer .s.al .n {background-image: linear-gradient(to top, rgba(102,51,51,.7) 40%, rgba(102,51,51,0));}
+.speccardcontainer .s:hover .n {background-image: linear-gradient(to top, rgba(51,102,51,.7) 40%, rgba(51,102,51,0));}
+.speccardcontainer .s .stat {
 	position:absolute;
 	left:8%;
 	top:83%;
@@ -304,14 +306,14 @@ input:checked + label, input:checked + label .b{background:#cfc !important}
 	overflow:hidden;
 	background: #111;
 }
-#bottom .s .stat .progress {
+.speccardcontainer .s .stat .progress {
 	position:absolute;
 	top:0;
 	left:0;
 	height:100%;
 	background-image: linear-gradient(to right, #449, #74a);
 }
-#bottom .s .stat .label {
+.speccardcontainer .s .stat .label {
 	top:0;
 	left:0;
 	position:absolute;
@@ -319,7 +321,7 @@ input:checked + label, input:checked + label .b{background:#cfc !important}
 	text-align:center;
 	height:100%;
 }
-#bottom .s .c {
+.speccardcontainer .s .c {
 	position:absolute;
 	left:8%;
 	top:71%;
@@ -330,7 +332,7 @@ input:checked + label, input:checked + label .b{background:#cfc !important}
 	font-size:90%;
 	width:84%;
 }
-#bottom .s .task {
+.speccardcontainer .s .task {
 	position:absolute;
 	left:8%;
 	top:5%;
@@ -339,7 +341,7 @@ input:checked + label, input:checked + label .b{background:#cfc !important}
 	background-image:url('res/icons/tasks.png');
 	background-size:cover;
 }
-#bottom .s .level {
+.speccardcontainer .s .level {
 	position:absolute;
 	left:35%;
 	top:5%;
@@ -348,7 +350,7 @@ input:checked + label, input:checked + label .b{background:#cfc !important}
 	background-image:url('res/icons/level.png');
 	background-size:cover;
 }
-#bottom .s .report {
+.speccardcontainer .s .report {
 	position:absolute;
 	right:8%;
 	top:5%;
@@ -415,12 +417,12 @@ input:checked + label, input:checked + label .b{background:#cfc !important}
 	width:60%;
 	left:20%;
 	height:80%;
-	top:10%}
+	top:5%}
 #windows .w.wd {
-	width:80%;
-	left:10%;
-	height:40%;
-	top:30%}
+	width:90%;
+	left:5%;
+	height:70%;
+	top:5%}
 #windows .w.huge {
 	width:90%;
 	left:5%;
@@ -543,6 +545,10 @@ input:checked + label, input:checked + label .b{background:#cfc !important}
 	z-index: 5;
     width: 75%;
 }
+.dd:first-child .e{
+	top:100%;
+	bottom:auto;
+}
 .dd:hover .e{
 	display:block;
 }
@@ -619,7 +625,7 @@ input:checked + label, input:checked + label .b{background:#cfc !important}
 	z-index:1;
 }
 
-#windows #specinfo .w {
+#windows #specinfo .w{
 	left:38.8%;
 	top:6%;
 }

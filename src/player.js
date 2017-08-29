@@ -14,8 +14,8 @@ function onYouTubeIframeAPIReady() {
 		playerVars: {
 			listType: 'playlist',
 			//list: 'PLdlZZmhB8NZKBTAHgh7YkHjVvwKJJEdsH',
-			  list: 'PLcHa462awHPlRxfq9Y17FwtBKXtsWNozR',
-			//list: 'PLBLUz3xoZ6bkr3UC0lFa0GC-ZQBY5deCG',
+			//list: 'PLcHa462awHPlRxfq9Y17FwtBKXtsWNozR',
+			list: 'PLBLUz3xoZ6bkr3UC0lFa0GC-ZQBY5deCG',
 			loop: 1
 		},
         events: {
@@ -28,7 +28,7 @@ function onYouTubeIframeAPIReady() {
 
 function setVolume(vol) {
 	if (vol == 6) player.setVolume(0);
-	else player.setVolume(100/Math.pow(vol, 1.33));
+	else player.setVolume(100/Math.pow(vol, 1.25));
 }
 
 function onPlayerReady(event) {
