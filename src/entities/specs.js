@@ -57,6 +57,8 @@ class spec {
 		if (this.attributes.payoutSatisfaction == undefined) this.attributes.payoutSatisfaction=0;
 		if (this.attributes.workbalance == undefined) this.attributes.workbalance=0;
 		if (this.attributes.secrecy == undefined) this.attributes.secrecy=100;
+		if (this.attributes.unpaid == undefined) this.attributes.unpaid=0;
+		if (this.attributes.lastPayout == undefined) this.attributes.lastPayout=0;
 		this.ministry = spec.ministry;
 		this.owner = spec.owner;
 		this.location = spec.location;

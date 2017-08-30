@@ -52,6 +52,7 @@ content.gameCreators.push(function() {
 				return;
 			}
 			for (let i=0; i<game.UI.taskAddedWorkers.length; i++) if (game.UI.taskAddedWorkers[i] == spec.id) {
+				if (!(i<=game.UI.taskDontRemove))
 				game.UI.taskAddedWorkers.splice(i, 1);
 				return;
 			}
@@ -131,10 +132,11 @@ content.gameCreators.push(function() {
 		)
 	};
 	
+	//////////////////////////////////////////////////////
+	//					Окно уведомлений		
+	//////////////////////////////////////////////////////
+	
 	game.UI.writeNotifies = function() {
-		//////////////////////////////////////////////////////
-		//					Окно уведомлений		
-		//////////////////////////////////////////////////////
 		
 		game.UI.notifiesTempList = [];
 		let i = world.lastMessageId % consts.maxNotifies, j;
@@ -167,6 +169,7 @@ content.gameCreators.push(function() {
 });
 
 content.gameCycles.main = function() {
+	if (world.currentSpeed == undefined) world.currentSpeed = 2;
 	setTimeout(content.gameCycles.main, 1000/consts.fps);
 	playerStateUpdate();
 	document.querySelector('#top .c').innerHTML = utils.getTime(world.time);
@@ -202,6 +205,7 @@ content.gameCycles.main = function() {
 	//////////////////////////////////////////////////////
 	//					Нижнее меню			
 	//////////////////////////////////////////////////////
+	
 	if (game.UI.bottomRenderCounter <= 0) {
 		game.UI.bottomRenderCounter = 60;
 		if (game.UI.bottomSelectionMode == 'view') {
@@ -212,6 +216,7 @@ content.gameCycles.main = function() {
 		Inferno.render(game.UI.bottomContainer, document.getElementById("bottom"));
 	}
 	game.UI.bottomRenderCounter--; 
+	
 	//////////////////////////////////////////////////////
 	//					Окно специалистов		
 	//////////////////////////////////////////////////////
@@ -232,7 +237,7 @@ content.gameCycles.main = function() {
 		let task = game.UI.taskHandling;
 		let work = content.works[task.id];
 		let c_city = content.cities[task.location];
-		if (task.value>=task.target) {
+		if (task.value>=task.target && task.target>0) {
 			document.getElementById("selectSpecs").classList.remove('d');
 			game.UI.bottomSelectionMode = 'view';
 			game.UI.bottomRenderCounter = 0;
@@ -249,12 +254,30 @@ content.gameCycles.main = function() {
 		}
 		let tlist = task.workers.concat(game.UI.taskAddedWorkers);
 		
+		let reslist = [];
+		let cost;
+		if (task.internalId == undefined && tlist.length>=work.minWorkers) {
+			cost = work.calcCost(tlist, task.ministry, task.location);
+			for (let res in cost) {
+				if (res == 'text') continue;
+				let w = game.player.resources[res].value*100/cost[res];
+				if (w>100) w = 100;
+				reslist.push(Inferno.createElement('div', {className:'line linebar'},
+					Inferno.createElement('div', {className:'p',style:'width:'+w+'%'}, null),
+					Inferno.createElement('div', {className:'d'}, strings.resources[res],
+						Inferno.createElement('div', {className:'c'}, cost[res])
+					)
+				));
+			}
+			if (cost.text != undefined) reslist.push(cost.text);
+		}
+		
 		{game.UI.taskContainer = 
 		Inferno.createElement('div', {},
 			Inferno.createElement('div', {className:'pad sp_info'},
 				Inferno.createElement('div', {className:'line'}, 
 					Inferno.createElement('div', {className:'d', style:'text-align:center;font-size:120%'}, 
-						(task.internalId == undefined)?'Создать задание':'Изменить задание №'+task.internalId
+						(task.internalId == undefined)?'Создать задание '+work.name:'Изменить задание №'+task.internalId+' ('+work.name+')'
 					)
 				),
 				'Необходимо специалистов: ',
@@ -262,6 +285,10 @@ content.gameCycles.main = function() {
 				Inferno.createElement('br',{},null),
 				'Максимум специалистов: ',
 				(work.maxWorkers==0?'Неограничено':work.maxWorkers),
+				Inferno.createElement('br',{},null),
+				'Потребуется:',
+				Inferno.createElement('br',{},null),
+				reslist,
 				Inferno.createElement('br',{},null),
 				(task.internalId != undefined?Inferno.createElement('div', {className:'line linebar'},
 					Inferno.createElement('div', {className:'p',style:'width:'+utils.workPercent(task, true)+'%'}, null),
@@ -285,9 +312,7 @@ content.gameCycles.main = function() {
 			((tlist.length>=work.minWorkers) && (task.internalId == undefined) && (work.massRequiments(tlist, task.ministry, task.location)>0)?
 				Inferno.createElement('div', {className:'b fs', onClick:function() {
 					utils.startTask(work, game.UI.taskAddedWorkers, task.ministry, task.location);
-					document.getElementById("selectSpecs").classList.remove('d');
-					game.UI.bottomSelectionMode = 'view';
-					game.UI.bottomRenderCounter = 0;
+					utils.closeTaskWindow();
 				}}, 'Начать выполнение')
 			:null),
 			((!((work.unstoppable) && (task.hasStarted)) || !task.hasStarted) && (game.UI.taskAddedWorkers.length>0) && (task.internalId != undefined)) && (work.massRequiments(tlist, task.ministry, task.location)>0?
@@ -302,9 +327,7 @@ content.gameCycles.main = function() {
 							break;
 						};
 					}
-					document.getElementById("selectSpecs").classList.remove('d');
-					game.UI.bottomSelectionMode = 'view';
-					game.UI.bottomRenderCounter = 0;
+					utils.closeTaskWindow();
 				}}, 'Добавить специалистов на задание')
 			:null),
 			(!((work.unstoppable) && (task.hasStarted)) && (task.internalId != undefined)?
@@ -326,14 +349,10 @@ content.gameCycles.main = function() {
 			:null),
 			Inferno.createElement('div', {className:'b fs', onClick:function() {
 				if (game.UI.taskBackHandlerType == 'none') {
-					document.getElementById("selectSpecs").classList.remove('d');
-					game.UI.bottomSelectionMode = 'view';
-					game.UI.bottomRenderCounter = 0;
+					utils.closeTaskWindow();
 				}
 				else if (game.UI.taskBackHandlerType == 'recreate') {
-					document.getElementById("selectSpecs").classList.remove('d');
-					game.UI.bottomSelectionMode = 'view';
-					game.UI.bottomRenderCounter = 0;
+					utils.closeTaskWindow();
 					utils.prepareTaskWindow(task.id, task.location, task.ministry);
 				}
 			}}, strings.UI.messages.cancel)

@@ -10,7 +10,6 @@ content.perks.c.p_gb_sys = {
 		spec.shadow.satisfactionBonus = -100000;
 		spec.attributes.payout = 0;},
     onTask:function(spec,task) {
-		console.log(world.currentSpeed, spec.data.worldSpeed);
 		if (world.currentSpeed!=4) spec.data.worldSpeed = world.currentSpeed;
 		world.currentSpeed = 4;
 	},
@@ -20,6 +19,7 @@ content.perks.c.p_gb_sys = {
 		document.getElementById('specinfo').classList.add('d');
 		document.getElementById('specinfo').style.zIndex = 5000;
 		document.getElementById('specinfo').childNodes[1].style.zIndex = 6999;
+		if (world.currentSpeed!=4) spec.data.worldSpeed = world.currentSpeed;
 		world.currentSpeed = 4;
 	},
     onIdle:function(spec,task) {
@@ -369,7 +369,10 @@ content.perks.c.p_drnk = {
 		spec.shadow.loyaltyBonus += 20;
 	},
     onTask:function(spec) {return 0;},
-    onIdle:function(spec) {return 0;}
+    onIdle:function(spec) {return 0;},
+	onIdleTick:function(spec) {
+		if (Math.random()<0.05) spec.attributes.health-=1+parseInt(Math.random()*Math.random()*Math.random()*8)
+	}
 };
 
 content.perks.perkVarPool.push({

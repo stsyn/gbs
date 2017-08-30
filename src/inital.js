@@ -49,5 +49,6 @@ window.onload = function() {
 	
 	form.sick.addEventListener('change', function() {
 		if (form.sick.checked) form.mods.value+='\nsrc/mods/fucken_sick.js';
+		else alert('Пожалуйста, удалите ту строчку самостоятельно, у меня лапки');
 	});
 }

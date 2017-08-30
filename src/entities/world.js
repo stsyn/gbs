@@ -70,7 +70,7 @@ content.worldCreators.push(function(w) {
 	w.ministries.Z.stats.loyalty = 10;
 	w.ministries.EQ.stats.loyalty = 100;
 	w.ministries.EQ.money = {value:500000};
-	w.ministries.OIA.money = {value:2000};
+	w.ministries.OIA.money = {value:5000};
 	w.ministries.EQ.isCountry = true;
 	w.ministries.OIA.stats.part = null;
 	w.playerMinistry = 'OIA';
@@ -83,7 +83,7 @@ content.worldCreators.push(function(w) {
 	
 	let tarr = [];
 	for (let i=0; i<60; i++) {
-		w.specs.push(new spec({location:'canterlot', stats:{specie:parseInt(Math.random()*3)}}));
+		w.specs.push(new spec({location:'canterlot', stats:{specie:parseInt(Math.random()*3)}, attributes:{involvement:10}}));
 		tarr.push(w.specs.length-1);
 	}
 	for (let i=0; i<consts.actualMinistries.length; i++) {

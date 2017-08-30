@@ -3,14 +3,16 @@ content.works.w_sys_relaxing = {
 	iconUrl:'res/icons/tasks.png',
 	iconOffset:0,
 	id:'w_sys_relaxing',
-	name:'Отдых'
+	name:'Отдых',
+	type:['relax']
 };
 
 content.works.w_sys_dead = {
 	iconUrl:'res/icons/tasks.png',
 	iconOffset:0,
 	id:'w_sys_dead',
-	name:'Мертв'
+	name:'Мертв',
+	type:[]
 };
 
 content.works.w_sys_companyHandler = {
@@ -24,8 +26,9 @@ content.works.w_sys_companyHandler = {
 	minWorkers:1,
 	onlyOne:false,
 	updateInterval:1,
-	data:{
-	},
+	type:[],
+	data:{},
+	
 	calcCost:function(spec, ministry, location) {return {};},
 	requiments:function(spec) {return 100;},
 	whenStart:function(taskId) {return 0},
@@ -55,6 +58,7 @@ content.works.w_studying = {
 	maxWorkers:1,
 	minWorkers:1,
 	onlyOne:false,
+	type:['study'],
 	updateInterval:utils.time2ms({date:1}),
 	
 	calcCost:function(spec, ministry, location) {
@@ -70,6 +74,7 @@ content.works.w_studying = {
 	},
 	update:function(t) {
 		world.specs[t.workers[0]].stats.experience+=5;
+		if (world.specs[t.workers[0]].attributes.secrecy>50) world.specs[t.workers[0]].attributes.secrecy--;
 		t.value++;
 	},
 	updatePerSpec:function(task, worker) {return 0},
@@ -89,24 +94,34 @@ content.works.w_movement = {
 	minWorkers:1,
 	onlyOne:false,
 	//unstoppable:true,
+	type:['travel'],
 	updateInterval:utils.time2ms({hours:1}),
 	data: {
-		days:'Дней'
+		days:' дней',
 	},
 	
-	calcCost:function(spec, ministry, location) {
-		return {text: parseInt(content.roadmap[spec.location][t.location]*world.data.travelSpeed/60)+this.data.days};
+	calcCost:function(ids, ministry, location) {
+		let sp = this.massRequiments(ids, ministry, location);
+		return {text: parseInt(content.roadmap[world.specs[ids[0]].location][location]*world.data.travelSpeed*100/sp/60/12)+this.data.days};
 	},
 	requiments:function(spec, ministry, location) {
 		if (spec.location == location) return 0;
-		return 100;
+		if (spec.stats.specie == 2 || spec.stats.specie == 3) return 100;
+		if (spec.stats.specie == 0) return 75;
+		return 50;
 	},
 	massRequiments:function(ids, ministry, location) {
 		let s = world.specs[ids[0]].location;
-		for (let i=1; i<ids.length; i++) if (s != world.specs[ids[i]].location) return 0;
-		return 100;
+		let i = 100;
+		for (let j=0; j<ids.length; j++) {
+			if (s != world.specs[ids[j]].location) return 0;
+			if (i>this.requiments(world.specs[ids[j]], ministry, location)) i=this.requiments(world.specs[ids[j]], ministry, location)
+		}
+		return i;
 	},
-	whenStart:function(taskId) {return 0},
+	whenStart:function(t) {
+		t.data.speed = this.massRequiments(t.workers, t.ministry, t.location);
+	},
 	whenStartPerSpec:function(t, spec) {
 		t.target = content.roadmap[spec.location][t.location]*world.data.travelSpeed;
 	},
@@ -115,7 +130,7 @@ content.works.w_movement = {
 			world.specs[t.workers[i]].location = t.location;
 	},
 	update:function(t) {
-		t.value+=60;
+		t.value+=60*t.data.speed/100;
 	},
 	updatePerSpec:function(task, worker) {return 0},
 	whenStopped:function(taskId) {return 0;},
@@ -139,7 +154,7 @@ content.works.w_hire = {
 	},
 	
 	calcCost:function(spec, ministry, location) {
-		let x = (100-world.ministries[spec[0].ministry].stats.loyalty-(100-utils.getSpecSecrecy(spec[0]))*3);
+		let x = (98-world.ministries[spec[0].ministry].stats.loyalty-(100-utils.getSpecSecrecy(spec[0]))*3);
 		if (x<0) return {text:this.data.string};
 		x = Math.pow(x, 2);
 		return {money:parseInt(spec[0].attributes.payout*x/10), text:this.data.string};
@@ -173,6 +188,7 @@ content.works.w_intStudying = {
 	maxWorkers:1,
 	minWorkers:1,
 	onlyOne:false,
+	type:['study'],
 	updateInterval:utils.time2ms({date:1}),
 	
 	data:{
@@ -199,6 +215,7 @@ content.works.w_intStudying = {
 	whenStoppedPerSpec:function(taskId) {return 0;},
 	update:function(t) {return 0;},
 	updatePerSpec:function(t, spec) {
+		if (spec.attributes.secrecy>25) spec.attributes.secrecy--;
 		if (Math.random()*Math.random()*Math.random()*0.4 > utils.getIntellect(spec)) {
 			utils.failTask(t);
 			return;
@@ -227,6 +244,7 @@ content.works.w_endStudying = {
 	maxWorkers:1,
 	minWorkers:1,
 	onlyOne:false,
+	type:['study'],
 	updateInterval:utils.time2ms({date:1}),
 	
 	data:{
@@ -257,6 +275,7 @@ content.works.w_endStudying = {
 	whenStoppedPerSpec:function(taskId) {return 0;},
 	update:function(t) {return 0;},
 	updatePerSpec:function(t, spec) {
+		if (spec.attributes.secrecy>25) spec.attributes.secrecy--;
 		t.value++;
 		if (Math.random()*Math.random()*Math.random()*0.4 > utils.getEndurance(spec)) {
 			spec.attributes.health -= parseInt(Math.random()*Math.random()*10);
@@ -288,6 +307,7 @@ content.works.w_chrStudying = {
 	maxWorkers:1,
 	minWorkers:1,
 	onlyOne:false,
+	type:['study'],
 	updateInterval:utils.time2ms({date:1}),
 	
 	calcCost:function(spec, ministry, location) {
@@ -310,6 +330,7 @@ content.works.w_chrStudying = {
 	whenStoppedPerSpec:function(taskId) {return 0;},
 	update:function(t) {return 0;},
 	updatePerSpec:function(t, spec) {
+		if (spec.attributes.secrecy>25) spec.attributes.secrecy--;
 		if (Math.random()*Math.random()*Math.random()*0.4 > utils.getCharisma(spec)) {
 			world.ministries.MI.attributes.loyalty -= 2;
 		}
