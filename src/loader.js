@@ -60,10 +60,12 @@ function parseInput() {
 function init() {
 	let conf = parseInput();
 	var compilations = {
-		def:['src/zero.js','src/entities/ministries.js','src/entities/cities.js','src/entities/messages.js','src/entities/world.js','src/entities/perks.js','src/entities/specs.js','src/entities/tasks.js', 'src/player.js', 'src/game.js']
+		def:['src/zero.js','src/entities/ministries.js','src/entities/cities.js','src/entities/messages.js','src/entities/world.js','src/entities/perks.js','src/entities/specs.js','src/entities/tasks.js', 'src/player.js', 'src/game.js'],
+		toki:['toki/src/zero.js','toki/src/entities/ministries.js','toki/src/entities/cities.js','toki/src/entities/messages.js','toki/src/entities/world.js','toki/src/entities/perks.js','toki/src/entities/specs.js','toki/src/entities/tasks.js', 'toki/src/player.js', 'toki/src/game.js']
 	}
 	var contentpacks = {
-		def:['src/content/portraits.js','src/content/specs.js','src/content/cities.js','src/content/perks.js','src/content/tasks.js']
+		def:['src/content/portraits.js','src/content/specs.js','src/content/cities.js','src/content/perks.js','src/content/tasks.js', 'src/content/ministries.js'],
+		toki:['toki/src/content/portraits.js','toki/src/content/specs.js','toki/src/content/cities.js','toki/src/content/perks.js','toki/src/content/tasks.js', 'toki/src/content/ministries.js']
 	}
 	var currentCompilation = conf.engine;
 	var currentPack = conf.content;

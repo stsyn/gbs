@@ -1033,7 +1033,7 @@ var utils = {
 			let ministry = consts.ministries[(i+ministryRandom)%consts.ministries.length];
 			for (let j=0; j<content.ministryTicks[ministry].length; j++) content.ministryTicks[ministry][j](world.ministries[ministry]);
 		}
-		
+		if (!world.config.urlHack) utils.saveWorld(true);
 	},
 	
 	ministryTick(m) {
