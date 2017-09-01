@@ -543,7 +543,7 @@ var utils = {
 		if (!w) {
 			spec.attributes.workbalance--;
 			if (content.works[utils.getCurrentWork(spec).id].type.has('hard')) spec.attributes.workbalance--;
-			if (content.works[utils.getCurrentWork(spec).id].type.has('easy')) spec.attributes.workbalance++;
+			if (content.works[utils.getCurrentWork(spec).id].type.has('easy')) spec.attributes.workbalance+=0.5;
 			if (spec.attributes.workbalance>3) spec.attributes.workbalance -= (consts.sleepOverWork - 1);
 			else if (spec.attributes.workbalance>0) spec.attributes.workbalance = 0;
 			//перерасчет секретности
@@ -572,12 +572,21 @@ var utils = {
 		
 		//перерасчет удовлетворения работой
 		if (spec.attributes.workbalance < -consts.workOverflow*6) {
-			spec.attributes.health-=spec.shadow.workHealthMult;
+			spec.attributes.health-=spec.shadow.workHealthMult*0.5;
 			spec.attributes.workbalance = -consts.workOverflow*6;
 			spec.attributes.workSatisfaction--;
 		}
-		if (spec.attributes.workbalance > consts.workOverflow) spec.attributes.workSatisfaction--;
-		if (spec.attributes.workbalance < -consts.workOverflow) spec.attributes.workSatisfaction++;
+		if (spec.attributes.workbalance > consts.workOverflow) {
+			if (spec.attributes.health/spec.attributes.maxHealth >50) spec.attributes.health+=spec.attributes.maxHealth*0.005;
+			else {
+				if (spec.attributes.workbalance > consts.workOverflow*2) {
+					spec.attributes.workbalance = consts.workOverflow*2;
+				}
+			}
+			if (spec.attributes.health>spec.attributes.maxHealth) spec.attributes.health=spec.attributes.maxHealth;
+			spec.attributes.workSatisfaction++;
+		}
+		if (spec.attributes.workbalance < -consts.workOverflow) spec.attributes.workSatisfaction--;
 		if (spec.attributes.workbalance < -consts.workOverflow*6) {
 			spec.attributes.workbalance = -consts.workOverflow*6;
 		}
@@ -632,7 +641,7 @@ var utils = {
 		else if (spec.attributes.payoutSatisfaction > 0) spec.attributes.payoutSatisfaction--;
 	},
 	
-	specTick(spec) {		
+	specTick(spec) {	
 		let w = (utils.getCurrentWork(spec).id!='w_sys_relaxing');
 		let f = (!w?'onIdleTick':'onTaskTick');
 		spec.perks.forEach (function (s, i, a) {
@@ -803,8 +812,7 @@ var utils = {
 			}
 		});
 		if (working>=pat.minWorkers && !work.hasStarted) {
-			let ww = work.workers.map(function(w) {return world.specs[w]});
-			let c=pat.calcCost(ww, work.ministry, work.location, world.specs[work.targetSpec]);
+			let c=pat.calcCost(work.workers, work.ministry, work.location, world.specs[work.targetSpec]);
 			for (let r in c) {
 				if (r == 'text') continue;
 				if ((work.workers.length>0 && utils.ownedByPlayer(world.specs[work.workers[0]])) || (work.workers.length==0 && work.ministry==game.player.ministry)) if (game.player.resources[r].value<c[r]) utils.destroyWork(work,5);
@@ -990,7 +998,7 @@ var utils = {
 			Yeah, someday there will be some code.
 		*/
 		
-		if (city.attributes.ponyCountMax>city.attributes.ponyCount) city.attributes.ponyCount *= (1.0005*(world.ministries[city.owner].ratio/100-40));
+		if (city.attributes.ponyCountMax>city.attributes.ponyCount) city.attributes.ponyCount *= (1+0.0005*(world.ministries[city.owner].stats.ratio-40)/50);
 		if (city.attributes.ratio>0) city.attributes.ratio-=0.08;
 		
 		
@@ -999,6 +1007,18 @@ var utils = {
 			That's enough
 			
 		*/
+		
+		/*
+		
+			This thing is for ministries only
+		
+		*/
+		
+		city.ministriesUsed = 0;
+		for (let m in city.ministriesPart) {
+			city.ministriesDisplayPart[m] = 100*city.ministriesPart[m]/city.attributes.ponyCount;
+			city.ministriesUsed+=city.ministriesPart[m]-content.ministryCityPartDelta[m](city);
+		}
 	},
 	
 	newDayTick() {
@@ -1032,6 +1052,13 @@ var utils = {
 		for (let i=0; i<consts.ministries.length; i++){
 			let ministry = consts.ministries[(i+ministryRandom)%consts.ministries.length];
 			for (let j=0; j<content.ministryTicks[ministry].length; j++) content.ministryTicks[ministry][j](world.ministries[ministry]);
+		}
+		
+		
+		for (let cityName in world.cities) {
+			let city = world.cities[cityName];
+			for (let i=0; i<content.ministryCityTicks[city.owner].length; i++) 
+				content.ministryCityTicks[city.owner][i](city);
 		}
 		
 	},

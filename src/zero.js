@@ -41,6 +41,7 @@ content.ministryTicks.MoA = [];
 content.ministryTicks.OIA = [];
 content.ministryTicks.Z = [];
 content.ministryTicks.EQ = [];
+content.ministryTicks.DDD = [];
 
 content.ministrySpecTicks = {};
 content.ministrySpecTicks.MAS = [];
@@ -52,6 +53,13 @@ content.ministrySpecTicks.MoA = [];
 content.ministrySpecTicks.OIA = [];
 content.ministrySpecTicks.Z = [];
 content.ministrySpecTicks.EQ = [];
+content.ministrySpecTicks.DDD = [];
+
+content.ministryCityPartDelta = {};
+
+content.ministryCityTicks = {};
+content.ministryCityTicks.EQ = [];
+content.ministryCityTicks.Z = [];
 
 var game = {};
 game.UI = {};

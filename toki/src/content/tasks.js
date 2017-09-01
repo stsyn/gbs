@@ -88,33 +88,42 @@ content.works.w_healing = {
 	iconUrl:'res/icons/tasks.png',
 	iconOffset:1,
 	name:'Лечение',
-	description:'Двухнедельные курсы начальной подготовки. Дают лишь самые основы, поэтому бесполезны для опытных специалистов.',
-	target:14,
+	description:'Лечение в медицинском центре Министерства Мира.',
+	target:2,
 	maxWorkers:1,
 	minWorkers:1,
 	onlyOne:false,
-	type:['study'],
+	type:['relax'],
 	updateInterval:utils.time2ms({date:1}),
 	
 	calcCost:function(spec, ministry, location) {
-		return {money:1000};
+		let i=100*(world.specs[spec[0]].attributes.maxHealth-world.specs[spec[0]].attributes.health)-world.ministries.MoP.stats.loyalty*5;
+		if (i<0) return {};
+		return {money:i};
 	},
 	requiments:function(spec) {
-		return parseInt(-40+60*(3-utils.getLevel(spec)));
+		return parseInt(100-spec.attributes.health*100/spec.attributes.maxHealth);
 	},
-	whenStart:function(taskId) {return 0},
-	whenStartPerSpec:function(task) {return 0},
-	whenComplete:function(t) {
-		world.specs[t.workers[0]].stats.experience+=150;
+	whenStart:function(t) {return 0},
+	whenStartPerSpec:function(t, spec) {
+		t.target = spec.attributes.maxHealth;
+		t.value = spec.attributes.health;
 	},
-	update:function(t) {
-		world.specs[t.workers[0]].stats.experience+=5;
-		if (world.specs[t.workers[0]].attributes.secrecy>50) world.specs[t.workers[0]].attributes.secrecy--;
-		t.value++;
+	whenComplete:function(t) {return 0},
+	update:function(t) {return 0},
+	updatePerSpec:function(t, spec) {
+		spec.attributes.health+=spec.attributes.maxHealth*0.1;
+		if (spec.attributes.health>spec.attributes.maxHealth) spec.attributes.health = spec.attributes.maxHealth;
+		t.value = spec.attributes.health;
 	},
-	updatePerSpec:function(task, worker) {return 0},
 	whenStopped:function(taskId) {return 0;},
-	whenStoppedPerSpec:function(taskId) {return 0;},
+	whenStoppedPerSpec:function(t, spec) {
+		if (spec.ministry == game.player.ministry) {
+			let i = (50*(world.specs[spec[0]].attributes.maxHealth-world.specs[spec[0]].attributes.health)-500);
+			if (i<0) i = 0;
+			game.player.resources.money.value += i;
+		}
+	},
 	whenFailed:function(taskId) {return 0}
 };
 
@@ -200,7 +209,7 @@ content.works.w_hire = {
 	massRequiments:function(ids, ministry, location, targetSpec) {
 		let ts = world.specs[targetSpec];
 		if (ts.ministry == game.player.ministry.id) return 0;
-		if (world.ministries[ts.ministry].owner == targetSpec.id) return 0;
+		if (world.ministries[ts.ministry].owner == targetSpec) return 0;
 		if (utils.getSpecSecrecy(ts)>=93) return 0;
 		return 100;
 	},
@@ -244,7 +253,7 @@ content.works.w_intStudying = {
 	},
 	
 	calcCost:function(spec, ministry, location) {
-		return {money:parseInt(200*(50-world.ministries.MAS.stats.part)*(1.33-utils.getIntellect(spec[0])))};
+		return {money:parseInt(200*(50-world.ministries.MAS.stats.part)*(1.33-utils.getIntellect(world.specs[spec[0]])))};
 	},
 	requiments:function(spec) {
 		if (utils.getLevel(spec) < 2) return -1;
@@ -301,7 +310,7 @@ content.works.w_endStudying = {
 	},
 	
 	calcCost:function(spec, ministry, location) {
-		return {money:parseInt(200*(50-world.ministries.MoA.stats.part)*(1.33-utils.getEndurance(spec[0])))};
+		return {money:parseInt(200*(50-world.ministries.MoA.stats.part)*(1.33-utils.getEndurance(world.specs[spec[0]])))};
 	},
 	requiments:function(spec) {
 		if (spec.attributes.health/spec.attributes.maxHealth <= 0.20) return -1;
@@ -359,7 +368,7 @@ content.works.w_chrStudying = {
 	updateInterval:utils.time2ms({date:1}),
 	
 	calcCost:function(spec, ministry, location) {
-		return {money:parseInt(200*(50-world.ministries.MI.stats.part)*(1.33-utils.getCharisma(spec[0])))};
+		return {money:parseInt(200*(50-world.ministries.MI.stats.part)*(1.33-utils.getCharisma(world.specs[spec[0]])))};
 	},
 	requiments:function(spec) {
 		if (utils.getLevel(spec) < 2) return -1;
@@ -429,9 +438,10 @@ content.works.w_watching = {
 		
 		//charisma checking
 		let chara = utils.getActualCharisma(ts);
-		if (utils.getSpecSecrecy(ts) < consts.visibility[2])
+		if (utils.getSpecSecrecy(ts) > consts.visibility[2])
 			chara = utils.getLevel(ts)*250;
 		let i = utils.getActualCharisma(world.specs[ids[0]])/chara;
+		
 		if (i>1) i = 1;
 		return chance*i;
 	},
@@ -482,6 +492,7 @@ content.works.w_watching = {
 
 function m_init() {
 	content.worklists.withSpec.push(content.works.w_studying);
+	content.worklists.withSpec.push(content.works.w_healing);
 	content.worklists.withSpec.push(content.works.w_intStudying);
 	content.worklists.withSpec.push(content.works.w_endStudying);
 	content.worklists.withSpec.push(content.works.w_chrStudying);

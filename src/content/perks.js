@@ -371,7 +371,8 @@ content.perks.c.p_drnk = {
     onTask:function(spec) {return 0;},
     onIdle:function(spec) {return 0;},
 	onIdleTick:function(spec) {
-		if (Math.random()<0.05) spec.attributes.health-=1+parseInt(Math.random()*Math.random()*Math.random()*8)
+		if (!utils.ownedByPlayer(spec)) return;
+		if (Math.random()<0.005) spec.attributes.health-=1+parseInt(Math.random()*Math.random()*Math.random()*8)
 	}
 };
 

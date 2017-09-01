@@ -267,7 +267,7 @@ content.gameCycles.main = function() {
 				reslist.push(Inferno.createElement('div', {className:'line linebar'},
 					Inferno.createElement('div', {className:'p',style:'width:'+w+'%'}, null),
 					Inferno.createElement('div', {className:'d'}, strings.resources[res],
-						Inferno.createElement('div', {className:'c'}, cost[res])
+						Inferno.createElement('div', {className:'c'}, parseInt(cost[res]))
 					)
 				));
 			}
@@ -409,9 +409,9 @@ content.gameCycles.main = function() {
 		game.UI.ministriesInCity = [];
 		for (let m in l_city.ministriesPart) game.UI.ministriesInCity.push(
 			Inferno.createElement('div', {className:'line linebar'}, 
-				Inferno.createElement('div', {className:'p',style:'width:'+parseInt(100*l_city.ministriesPart[m]/l_city.attributes.ponyCount)+'%'}, null),
+				Inferno.createElement('div', {className:'p',style:'width:'+((l_city.ministriesDisplayPart[m]>100)?100:l_city.ministriesDisplayPart[m])+'%'}, null),
 				Inferno.createElement('div', {className:'d'}, world.ministries[m].info.name,
-					Inferno.createElement('span', {className:'c'}, l_city.ministriesPart[m])
+					Inferno.createElement('span', {className:'c'}, parseInt(l_city.ministriesPart[m])+' ('+parseInt(l_city.ministriesDisplayPart[m])+'%)')
 				)
 			)
 		);
@@ -433,7 +433,7 @@ content.gameCycles.main = function() {
 		});
 		
 		game.UI.citySpecDivList = game.UI.specsInCity.map(game.UI.generateSpecLine);
-			{ 
+		{ 
 			game.UI.cityProfile = 
 				Inferno.createElement('div', {},
 					(l_city.owner=='EQ'?Inferno.createElement('div', {className:'pad sp_info'},
@@ -443,7 +443,13 @@ content.gameCycles.main = function() {
 						Inferno.createElement('div', {className:'line linebar'}, 
 							Inferno.createElement('div', {className:'p',style:'width:'+parseInt(100*l_city.attributes.ponyCount/l_city.attributes.ponyCountMax)+'%'}, null),
 							Inferno.createElement('div', {className:'d'}, strings.UI.ponyCount,
-								Inferno.createElement('span', {className:'c'}, l_city.attributes.ponyCount)
+								Inferno.createElement('span', {className:'c'}, parseInt(l_city.attributes.ponyCount))
+							)
+						),
+						Inferno.createElement('div', {className:'line linebar'}, 
+							Inferno.createElement('div', {className:'p',style:'width:'+l_city.attributes.ratio+'%'}, null),
+							Inferno.createElement('div', {className:'d'}, strings.UI.ratio,
+								Inferno.createElement('span', {className:'c'}, parseInt(l_city.attributes.ratio))
 							)
 						),
 						Inferno.createElement('div', {className:'line linebar'}, 
@@ -518,7 +524,7 @@ content.gameCycles.main = function() {
 			for (let r in game.player.resources) {
 				game.UI.resources.push(Inferno.createElement('div', {className:'line linebar'}, 
 					Inferno.createElement('div', {className:'d'}, strings.resources[r],
-						Inferno.createElement('span', {className:'c'}, game.player.resources[r].value)
+						Inferno.createElement('span', {className:'c'}, parseInt(game.player.resources[r].value))
 					)
 				));
 			}
@@ -539,24 +545,24 @@ content.gameCycles.main = function() {
 						(!(l_min.isCountry || l_min.stats.part == null)?Inferno.createElement('div', {className:'line linebar'}, 
 							Inferno.createElement('div', {className:'p',style:'width:'+l_min.stats.part+'%'}, null),
 							Inferno.createElement('div', {className:'d'}, strings.UI.part,
-								Inferno.createElement('span', {className:'c'}, l_min.stats.part)
+								Inferno.createElement('span', {className:'c'}, parseInt(l_min.stats.part))
 							)
 						):null),
 						(!(l_min.isCountry || l_min.stats.part == null)?Inferno.createElement('div', {className:'line linebar'}, 
 							Inferno.createElement('div', {className:'d'}, strings.UI.tpart,
-								Inferno.createElement('span', {className:'c'}, l_min.stats.tpart)
+								Inferno.createElement('span', {className:'c'}, parseInt(l_min.stats.tpart))
 							)
 						):null),
 						(l_min.isCountry?Inferno.createElement('div', {className:'line linebar st_chr'}, 
 							Inferno.createElement('div', {className:'p',style:'width:'+l_min.stats.military+'%'}, null),
 							Inferno.createElement('div', {className:'d'}, strings.UI.military,
-								Inferno.createElement('span', {className:'c'}, l_min.stats.military)
+								Inferno.createElement('span', {className:'c'}, parseInt(l_min.stats.military))
 							)
 						):null),
 						(l_min.isCountry?Inferno.createElement('div', {className:'line linebar st_chr'}, 
 							Inferno.createElement('div', {className:'p',style:'width:'+l_min.stats.treat+'%'}, null),
 							Inferno.createElement('div', {className:'d'}, strings.UI.treat,
-								Inferno.createElement('span', {className:'c'}, l_min.stats.treat)
+								Inferno.createElement('span', {className:'c'}, parseInt(l_min.stats.treat))
 							)
 						):null),
 						game.UI.resources
@@ -608,14 +614,14 @@ content.gameCycles.main = function() {
 		game.UI.specWorks = content.worklists.withSpec.map(function(work) {
 			if (work.requiments(l_spec, l_spec.ministry, l_spec.location) > 0) {
 				game.UI.hasWorks = true;
-				let resList = '', cost = work.calcCost([l_spec], l_spec.ministry, l_spec.location);
+				let resList = '', cost = work.calcCost([l_spec.id], l_spec.ministry, l_spec.location);
 				let payable=true;
 				if (cost!={}) {
 					let unf = '';
 					for (let k in cost) {
 						if (k == 'text') unf = cost[k];
 						else {
-							resList+= strings.resources[k]+': '+cost[k]+' ('+strings.UI.messages.resHave+parseInt(game.player.resources[k].value)+')\n';
+							resList+= strings.resources[k]+': '+parseInt(cost[k])+' ('+strings.UI.messages.resHave+parseInt(game.player.resources[k].value)+')\n';
 							if (game.player.resources[k].value<cost[k]) payable = false;
 						}
 					}
@@ -663,7 +669,7 @@ content.gameCycles.main = function() {
 					for (let k in cost) {
 						if (k == 'text') unf = cost[k];
 						else {
-							resList+= strings.resources[k]+': '+cost[k]+' ('+strings.UI.messages.resHave+parseInt(game.player.resources[k].value)+')\n';
+							resList+= strings.resources[k]+': '+parseInt(cost[k])+' ('+strings.UI.messages.resHave+parseInt(game.player.resources[k].value)+')\n';
 							if (game.player.resources[k].value<cost[k]) payable = false;
 						}
 					}
@@ -1001,6 +1007,7 @@ function m_init() {
 	});
 	
 	document.querySelectorAll('#menu .b.fs')[0].addEventListener('click', function() {
+		if (game.UI.tspeed == 3) game.UI.tspeed = 1;
 		utils.changeSpeed(game.UI.tspeed);
 		document.getElementById('menu').classList.remove('d');
 	});

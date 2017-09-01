@@ -59,6 +59,10 @@ function parseInput() {
 
 function init() {
 	let conf = parseInput();
+	var utils = {
+		def:['src/utils.js'],
+		toki:['toki/src/utils.js']
+	}
 	var compilations = {
 		def:['src/zero.js','src/entities/ministries.js','src/entities/cities.js','src/entities/messages.js','src/entities/world.js','src/entities/perks.js','src/entities/specs.js','src/entities/tasks.js', 'src/player.js', 'src/game.js'],
 		toki:['toki/src/zero.js','toki/src/entities/ministries.js','toki/src/entities/cities.js','toki/src/entities/messages.js','toki/src/entities/world.js','toki/src/entities/perks.js','toki/src/entities/specs.js','toki/src/entities/tasks.js', 'toki/src/player.js', 'toki/src/game.js']
@@ -72,7 +76,7 @@ function init() {
 	var currentLanguage = conf.lang;
 	var loaders = [];
 	
-	m.push('src/utils.js');
+	m = m.concat(utils[currentCompilation]);
 	m.push('src/lang/ru.js');
 	m.push('src/fontload.js');
 	for (let i=0; i<conf.mods.length; i++) {

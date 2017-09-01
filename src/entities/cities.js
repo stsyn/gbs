@@ -43,7 +43,20 @@ class city {
 		this.attributes.militaryMult = template.attributesStatic.militaryMult;
 		this.attributes.industrialMult = template.attributesStatic.industrialMult;
 		
-		if (template.ministriesPart == undefined) this.ministriesPart = {};
-		else this.ministriesPart = template.ministriesPart;
+		this.ministriesUsed = 0;
+		if (template.ministriesPart == undefined) {
+			this.ministriesPart = {};
+		}
+		else {
+			this.ministriesPart = template.ministriesPart;
+			for (let m in this.ministriesPart) {
+				this.ministriesUsed += template.ministriesPart[m]-content.ministryCityPartDelta[m](this);
+			}
+		}
+		this.ministriesDisplayPart = {};
+		
+		if (template.data == undefined) this.data = {};
+		else this.data = template.data;
+		this.attributes.ratio = 80;
 	}
 }

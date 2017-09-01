@@ -32,6 +32,18 @@ content.worldCreators.push(function(w) {
 	
 	w.specs.push(new spec(content.presetedSpecs.Luna));
 	
+	
+	let uI = function(city) {return utils.getCityActualIndustrial(city)/5;};
+	let uT = function(city) {return utils.getCityActualTech(city)/5;};
+	content.ministryCityPartDelta.MAS = uI;
+	content.ministryCityPartDelta.MoM = uI;
+	content.ministryCityPartDelta.MI  = uT;
+	content.ministryCityPartDelta.MoP = uI;
+	content.ministryCityPartDelta.MWT = uT;
+	content.ministryCityPartDelta.MoA = uT;
+	
+	content.ministryCityTicks.EQ.push(utils.normalCityTick);
+	
 	for (cityTemplate in content.cities) {
 		if (cityTemplate != 'hoofington') {
 			world.cities[cityTemplate] = new city(content.cities[cityTemplate]);
@@ -79,8 +91,6 @@ content.worldCreators.push(function(w) {
 	w.ministries.OIA.stats.part = null;
 	w.playerMinistry = 'OIA';
 	content.ministrySpecTicks.OIA.push(utils.OIAspecTick);
-	w.ministries.Z.ratio = 80;
-	w.ministries.EQ.ratio = 80;
 	
 	
 	for (let i=0; i<7; i++) {
@@ -107,7 +117,6 @@ content.worldCreators.push(function(w) {
 	w.ministries.MoP.priorities = function(spec) {return utils.getActualIntellect(spec)+utils.getActualCharisma(spec)};
 	w.ministries.MoA.priorities = function(spec) {return utils.getActualEndurance(spec)};
 	w.ministries.MWT.priorities = function(spec) {return utils.getActualEndurance(spec)+utils.getActualIntellect(spec)};
-	w.ministries.MWT.priorities	= function(spec) {return utils.getActualEndurance(spec)+utils.getActualIntellect(spec)};
 	
 	w.ministries.EQ.priorities = function(spec) {return utils.getActualEndurance(spec)+utils.getActualIntellect(spec)+utils.getActualCharisma(spec)};
 	w.ministries.Z.priorities = function(spec) {return utils.getActualEndurance(spec)+utils.getActualIntellect(spec)+utils.getActualCharisma(spec)};
