@@ -144,7 +144,14 @@ var utils = {
 	},
 	
 	getSpecById(id) {
-		for (let i=0; i<world.specs.length; i++) if (world.specs[i].internalId == id) return world.specs[i];
+		for (let i=0; i<world.specs.length; i++) if (world.specs[i].internalId == id) 
+			return world.specs[i];
+		return undefined;
+	},
+	
+	getTaskById(id) {
+		for (let i=0; i<world.tasks.length; i++) if (world.tasks[i] != undefined) if (world.tasks[i].id == id) 
+			return world.tasks[i];
 		return undefined;
 	},
 	
@@ -366,11 +373,7 @@ var utils = {
 		if (!world.tasks[spec.tasks[0]].hasStarted) return content.works.w_sys_relaxing; 
 		else return world.tasks[spec.tasks[0]];
 	},
-	
-	getCurrentWorkIconAndOffset(spec) {
 		
-	},
-	
 	closePopup() {
 		world.currentSpeed = game.UI.tspeed;
 		let e = document.getElementById("popup");
@@ -476,13 +479,21 @@ var utils = {
 			let m = world.ministries[ministry];
 			if (m.owner == a) return -1;
 			if (m.owner == b) return 1;
-			if (m.priorities(world.specs[a]) > m.priorities(world.specs[b])) return -1;
+			if (content.ministryPriorities[m.id](world.specs[a]) > content.ministryPriorities[m.id](world.specs[b])) return -1;
 			return 1;
 		};
 		sortType.priorityOIA = function (a, b) {
 			let m = world.ministries[ministry];
+			if (a.attributes.health<a.attributes.maxHealth*0.2 ^ b.attributes.health<b.attributes.maxHealth*0.2) {
+				if (a.attributes.health<a.attributes.maxHealth*0.2) return -1;
+				return 1;
+			}
 			if (m.owner == a.id) return -1;
-			if (m.priorities(a) > m.priorities(b)) return -1;
+			if (a.tasks.length == 0 ^ b.tasks.length == 0) {
+				if (a.tasks.length == 0) return -1;
+				return 1;
+			}
+			if (content.ministryPriorities[m.id](a) > content.ministryPriorities[m.id](b)) return -1;
 			return 1;
 		};
 		sortType.workPriority = function (a, b) {
@@ -746,7 +757,7 @@ var utils = {
 		}
 		
 		if (work.hasStartedPerSpec[i]) {
-			pat.whenStoppedPerSpec(work, i);
+			pat.whenStoppedPerSpec(work, spec);
 			for (let j=0; j<spec.perks.length; j++) {
 				content.perks.c[spec.perks[j]].onIdle(spec,0);
 			}
@@ -801,7 +812,7 @@ var utils = {
 		//проверка на старт работы и количество работников
 		let working = 0;
 		work.workers.forEach(function (worker, i, a) {
-			if (pat.requiments(world.specs[worker])<=0) {
+			if (parseInt(pat.requiments(world.specs[worker]))<=0) {
 				if (utils.stopTask(work, world.specs[worker], 2)) return;
 			}
 			else if (world.specs[worker].tasks[0] == work.internalId) {

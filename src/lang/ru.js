@@ -111,7 +111,7 @@ var strings = {
 			unpaid:'Задолжность перед специалистом составляет ',
 			
 			removeSpecFromTask:'Снять этого специалиста с задания',
-			removeAllSpecsFromTask:'Отменить выполнение заданий для всех',
+			removeAllSpecsFromTask:'Отменить выполнение задания',
 			
 			workCompleted:'Задание "%work%" выполнено.',
 			workFailed:'Задание "%work%" провалено.',
@@ -130,6 +130,16 @@ var strings = {
 			notEnoughMoney:'Недостаточно битс',
 			notEnoughRes:'Недостаточно ресурсов',
 			resHave:'имеется ',
+			
+			specMinCount:'Необходимо специалистов: ',
+			specMaxCount:'Максимум специалистов: ',
+			unlimited:'Неограничено',
+			required:'Потребуется:',
+			noAdditionalSpecs:'Не выбраны дополнительные специалисты',
+			startTask:'Начать выполнение',
+			effeciency:'Эффективность',
+			addSpecs:'Добавить специалистов на задание',
+			
 			
 			ok:'ОК',
 			cancel:'Отмена'

@@ -55,6 +55,8 @@ content.ministrySpecTicks.Z = [];
 content.ministrySpecTicks.EQ = [];
 content.ministrySpecTicks.DDD = [];
 
+content.ministryPriorities = {};
+
 content.ministryCityPartDelta = {};
 
 content.ministryCityTicks = {};

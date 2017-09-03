@@ -45,7 +45,7 @@ content.works.w_rum_rum_rum = {
 	update:function(t) {
 		t.value++;
 		world.specs[t.workers[0]].attributes.health++;
-		if (Math.random()<0.6) world.specs[t.workers[0]].attributes.health-= parseInt(Math.random()*Math.random()*Math.random()*9);
+		if (Math.random()<0.6) world.specs[t.workers[0]].attributes.health-= parseInt(Math.random()*Math.random()*Math.random()*9)+1;
 		if (world.specs[t.workers[0]].attributes.health>world.specs[t.workers[0]].attributes.maxHealth)
 			world.specs[t.workers[0]].attributes.health = world.specs[t.workers[0]].attributes.maxHealth;
 	},
@@ -63,15 +63,28 @@ content.works.w_rum_rum_rum_rum_rum_rum = {
 	name:'Бухать толпой',
 	description:'Пир на весь мир',
 	target:-1,
-	maxWorkers:0,
+	maxWorkers:-1,
 	minWorkers:2,
 	onlyOne:true,
-	unstoppable:true,
+	unstoppable:false,
 	updateInterval:360,
-	data:{},
+	data:{
+		has:'Пир уже происходит в ',
+		h2:'. Вы не можете устроить второй такой же!'
+	},
 	
-	calcCost:function(spec, ministry, location) {return {}},
+	calcCost:function(spec, ministry, location) {
+		let t = utils.getTaskById(this.id);
+		if (t!=undefined) {
+			return {text:this.data.has+content.cities[t.location].name+this.data.h2}
+		}
+		return {}
+	},
 	massRequiments:function(spec) {
+		let t = utils.getTaskById(this.id);
+		if (t!=undefined) {
+			return 0;
+		}
 		return 100;
 	},
 	requiments:function(spec) {
@@ -104,11 +117,13 @@ content.works.w_rum_rum_rum_rum_rum_rum = {
 	},
 	updatePerSpec:function(task, worker) {return 0},
 	whenStopped:function(taskId) {return 0;},
-	whenStoppedPerSpec:function(t) {
+	whenStoppedPerSpec:function(t, spec) {
+		let i=0;
 		for (i=0; i<t.workers.length; i++) {
 			if (t.workers[i] == undefined) continue;
 			if (t.workers[i] == spec.id) break;
 		}
+		console.log(i);
 		t.data.specs.splice(i,1);
 	},
 	whenFailed:function(taskId) {return 0}
@@ -119,6 +134,21 @@ content.worklists.perCity.push(content.works.w_rum_rum_rum_rum_rum_rum);
 
 content.perks.c.p_drnk.onIdleTick = function(spec) {
 	if (Math.random() < 0.05) {
+		let t = utils.getTaskById('w_rum_rum_rum_rum_rum_rum');
+		if (t!=undefined) {
+			if (Math.random()/world.roadmap[spec.location][t.location] > 0.5) {
+				utils.startTask(content.works.w_sys_companyHandler, [spec.id], t.ministry, t.targetSpec, t.location);
+				for (let i=0; i<world.tasks.length; i++) {
+					if (world.tasks[i] == undefined) continue;
+					if (world.tasks[i].id != 'w_sys_companyHandler') continue;
+					if (world.tasks[i].data.taskId == undefined) {
+						world.tasks[i].data.taskId = t.internalId;
+						break;
+					};
+				}
+				return;
+			}
+		}
 		utils.startTask(content.works.w_rum_rum_rum, [spec.id], spec.ministry, undefined, spec.location);
 	}
 }

@@ -2,6 +2,8 @@
     <Project name="GBS">
         <Folder name="i">
             <File name="i\legal.txt" />
+            <File name="i\devchangelog.txt" />
+            <File name="i\changelog.txt" />
         </Folder>
         <Folder name="src">
             <Folder name="entities">

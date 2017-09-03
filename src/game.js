@@ -12,6 +12,28 @@ content.gameLaunchers.push(function() {
 });
 
 content.gameCreators.push(function() {
+	let uI = function(city) {return utils.getCityActualIndustrial(city)/5;};
+	let uT = function(city) {return utils.getCityActualTech(city)/5;};
+	content.ministryPriorities.MoM = function(spec) {return utils.getActualEndurance(spec)+utils.getActualCharisma(spec)};
+	content.ministryPriorities.MAS = function(spec) {return utils.getActualIntellect(spec)};
+	content.ministryPriorities.MI = function(spec) {return utils.getActualCharisma(spec)};
+	content.ministryPriorities.MoP = function(spec) {return utils.getActualIntellect(spec)+utils.getActualCharisma(spec)};
+	content.ministryPriorities.MoA = function(spec) {return utils.getActualEndurance(spec)};
+	content.ministryPriorities.MWT = function(spec) {return utils.getActualEndurance(spec)+utils.getActualIntellect(spec)};
+	
+	content.ministryCityPartDelta.MAS = uI;
+	content.ministryCityPartDelta.MoM = uI;
+	content.ministryCityPartDelta.MI  = uT;
+	content.ministryCityPartDelta.MoP = uI;
+	content.ministryCityPartDelta.MWT = uT;
+	content.ministryCityPartDelta.MoA = uT;
+	content.ministryCityTicks.EQ.push(utils.normalCityTick);
+	content.ministryPriorities.EQ = function(spec) {return utils.getActualEndurance(spec)+utils.getActualIntellect(spec)+utils.getActualCharisma(spec)};
+	content.ministryPriorities.Z = function(spec) {return utils.getActualEndurance(spec)+utils.getActualIntellect(spec)+utils.getActualCharisma(spec)};
+	content.ministryPriorities.OIA = function(spec) {return utils.getActualEndurance(spec)+utils.getActualIntellect(spec)+utils.getActualCharisma(spec)};
+});
+
+content.gameCreators.push(function() {
 	utils.preparePerks();
 	
 	game.UI.popups = [];
@@ -36,6 +58,7 @@ content.gameCreators.push(function() {
 		else {
 			//if (work.maxWorkers!=0) return;
 			for (let i=0; i<task.workers.length; i++) if (task.workers[i] == spec.id) {
+				if (!utils.ownedByPlayer(spec)) return;
 				let popUp = {
 					text: strings.UI.messages.stopSolo,
 					buttons:[{
@@ -122,7 +145,7 @@ content.gameCreators.push(function() {
 		let image;
 		if (spec.stats.portrait.url != '' && spec.stats.portrait.url != undefined) image = Inferno.createElement('img', {className:'p', src:spec.stats.portrait.url}, null);
 		else image = content.portraits[spec.stats.portrait.id].func(spec, 'p color');
-		return Inferno.createElement('div', {className:'s', onClick:(game.UI.bottomSelection[mode]!=undefined?function(){game.UI.bottomSelection[mode](spec)}:function(){return 0})},
+		return Inferno.createElement('div', {className:'s'+(spec.attributes.health<spec.attributes.maxHealth*0.2?' al':''), onClick:(game.UI.bottomSelection[mode]!=undefined?function(){game.UI.bottomSelection[mode](spec)}:function(){return 0})},
 			image,
 			Inferno.createElement('div', {className:'task', style:'background-image:url('+content.works[utils.getCurrentWork(spec).id].iconUrl+');background-position: '+(-content.works[utils.getCurrentWork(spec).id].iconOffset*100)+'% 0'}, ' '),
 			Inferno.createElement('div', {className:'level', style:'background-position:'+(spec.stats.level*(-100))+'% 0'}, null),
@@ -193,6 +216,7 @@ content.gameCycles.main = function() {
 	}
 	
 	world.tasks.forEach(function (item, i, arr) {
+		if (item == null) return;
 		if (item.timeBeforeUpdate != null) {
 			item.timeBeforeUpdate -= (consts.gameSpeed[world.currentSpeed])/consts.fps;
 			if (item.timeBeforeUpdate <= 0) utils.workTick(item);
@@ -282,13 +306,13 @@ content.gameCycles.main = function() {
 						(task.internalId == undefined)?'Создать задание '+work.name:'Изменить задание №'+task.internalId+' ('+work.name+')'
 					)
 				),
-				'Необходимо специалистов: ',
+				strings.UI.messages.specMinCount,
 				work.minWorkers,
 				Inferno.createElement('br',{},null),
-				'Максимум специалистов: ',
-				(work.maxWorkers==-1?'Неограничено':work.maxWorkers),
+				strings.UI.messages.specMaxCount,
+				(work.maxWorkers==-1?strings.UI.messages.unlimited:work.maxWorkers),
 				Inferno.createElement('br',{},null),
-				'Потребуется:',
+				strings.UI.messages.required,
 				Inferno.createElement('br',{},null),
 				reslist,
 				Inferno.createElement('br',{},null),
@@ -302,7 +326,7 @@ content.gameCycles.main = function() {
 				):null),
 				(tlist.length>=work.minWorkers?Inferno.createElement('div', {className:'line linebar'},
 					Inferno.createElement('div', {className:'p',style:'width:'+work.massRequiments(tlist, task.ministry, task.location, task.targetSpec)+'%'}, null),
-					Inferno.createElement('div', {className:'d'}, 'Эффективность',
+					Inferno.createElement('div', {className:'d'}, strings.UI.messages.effeciency,
 						Inferno.createElement('div', {className:'c'}, parseInt(work.massRequiments(tlist, task.ministry, task.location, task.targetSpec))+'%')
 					)
 				):null)
@@ -312,17 +336,16 @@ content.gameCycles.main = function() {
 			):null),
 			(selectedContainer.length!=0?Inferno.createElement('div', {className:'pad sp_info speccardcontainer'},
 				selectedContainer
-			):'Не выбраны дополнительные специалисты'),
+			):strings.UI.messages.noAdditionalSpecs),
 			((tlist.length>=work.minWorkers) && payable && (task.internalId == undefined) && (work.massRequiments(tlist, task.ministry, task.location, task.targetSpec)>0)?
 				Inferno.createElement('div', {className:'b fs', onClick:function() {
 					utils.startTask(work, game.UI.taskAddedWorkers, task.ministry, task.targetSpec, task.location);
 					utils.closeTaskWindow();
-				}}, 'Начать выполнение')
+				}}, strings.UI.messages.startTask)
 			:null),
 			((!((work.unstoppable) && (task.hasStarted)) || !task.hasStarted) && (game.UI.taskAddedWorkers.length>0) && (task.internalId != undefined)) && (work.massRequiments(tlist, task.ministry, task.location, task.targetSpec)>0?
 				Inferno.createElement('div', {className:'b fs', onClick:function() {
 					utils.startTask(content.works.w_sys_companyHandler, game.UI.taskAddedWorkers, task.ministry, task.targetSpec, task.location);
-					console.log(world.tasks);
 					for (let i=0; i<world.tasks.length; i++) {
 						if (world.tasks[i] == undefined) continue;
 						if (world.tasks[i].id != 'w_sys_companyHandler') continue;
@@ -332,7 +355,7 @@ content.gameCycles.main = function() {
 						};
 					}
 					utils.closeTaskWindow();
-				}}, 'Добавить специалистов на задание')
+				}}, strings.UI.messages.addSpecs)
 			:null),
 			(!((work.unstoppable) && (task.hasStarted)) && (task.internalId != undefined)?
 				Inferno.createElement('div', {className:'b fs', onClick:function() {
@@ -349,7 +372,7 @@ content.gameCycles.main = function() {
 							callback: function() {utils.closePopup();}
 						}]};
 					utils.callPopup(popUp);
-				}}, 'Отменить задание')
+				}}, strings.UI.messages.removeAllSpecsFromTask)
 			:null),
 			Inferno.createElement('div', {className:'b fs', onClick:function() {
 				if (game.UI.taskBackHandlerType == 'none') {
@@ -629,6 +652,19 @@ content.gameCycles.main = function() {
 				}
 				else resList = strings.UI.messages.freeTask;
 				
+				let u = false;
+				if (work.onlyOne) {
+					for (let i=0; i<world.tasks.length; i++) {
+						if (world.tasks[i] == undefined) continue;
+						if (world.tasks[i].id != work.id) continue;
+						if (world.tasks[i].workers[0] == l_spec.id && world.tasks[i].ministry == l_spec.ministry && world.tasks[i].location == l_spec.location) {
+							u = true;
+							break;
+						}
+					}
+				}
+				if (u) return;
+					
 				return Inferno.createElement('div', {className:'line linebar dd b', onClick:function() {
 					let specId = 0;
 					utils.callPopup({
@@ -660,7 +696,6 @@ content.gameCycles.main = function() {
 		game.UI.hasPerWorks = false;
 		game.UI.specPerWorks = content.worklists.perSpec.map(function(work) {
 			if (work.massRequiments([], l_spec.ministry, l_spec.location, l_spec.id) > 0) {
-				
 				game.UI.hasPerWorks = true;
 				let resList = '', cost = work.calcCost([], l_spec.ministry, l_spec.location, l_spec);
 				let payable=true;
@@ -677,12 +712,24 @@ content.gameCycles.main = function() {
 				}
 				let click;
 				if (work.maxWorkers == -1) {
+					let u = false;
+					if (work.onlyOne) {
+						for (let i=0; i<world.tasks.length; i++) {
+							if (world.tasks[i] == undefined) continue;
+							if (world.tasks[i].id != work.id) continue;
+							if (world.tasks[i].targetSpec == l_spec.id && world.tasks[i].ministry == game.player.ministry.id && world.tasks[i].location == l_spec.location) {
+								u = true;
+								break;
+							}
+						}
+					}
+					if (u) return;
 					click = function() {utils.callPopup({
 						text:resList,
 						buttons:[{
 							text: (payable?strings.UI.messages.ok:strings.UI.messages.notEnoughRes),
 							callback: (payable?function() {
-								utils.startTask(work, [], game.player.ministry.id, l_spec.id, world.homecity);
+								utils.startTask(work, [], game.player.ministry.id, l_spec.id, l_spec.location);
 								utils.closePopup()
 							}:function() {return 0})
 						},{
@@ -900,7 +947,7 @@ content.gameCycles.main = function() {
 						(utils.ownedByPlayer(l_spec)?Inferno.createElement('div', {className:'pad sp_half'},
 							l_notice,
 							Inferno.createElement('br'),
-							(l_spec.attributes.unpaid>0?strings.UI.messages.unpaid+l_spec.attributes.unpaid:''),
+							(l_spec.attributes.unpaid>0?strings.UI.messages.unpaid+parseInt(l_spec.attributes.unpaid):''),
 							Inferno.createElement('div', {className:'pad sp_inv'},
 								'Изменить уровень оплаты',
 								Inferno.createElement('div', {className:'b', style:'width:16%', onClick:function() {if (l_spec.attributes.currentPayout>100) l_spec.attributes.currentPayout-=100;}},'---'),

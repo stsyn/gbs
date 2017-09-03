@@ -33,17 +33,6 @@ content.worldCreators.push(function(w) {
 	w.specs.push(new spec(content.presetedSpecs.Luna));
 	
 	
-	let uI = function(city) {return utils.getCityActualIndustrial(city)/5;};
-	let uT = function(city) {return utils.getCityActualTech(city)/5;};
-	content.ministryCityPartDelta.MAS = uI;
-	content.ministryCityPartDelta.MoM = uI;
-	content.ministryCityPartDelta.MI  = uT;
-	content.ministryCityPartDelta.MoP = uI;
-	content.ministryCityPartDelta.MWT = uT;
-	content.ministryCityPartDelta.MoA = uT;
-	
-	content.ministryCityTicks.EQ.push(utils.normalCityTick);
-	
 	for (cityTemplate in content.cities) {
 		if (cityTemplate != 'hoofington') {
 			world.cities[cityTemplate] = new city(content.cities[cityTemplate]);
@@ -111,23 +100,12 @@ content.worldCreators.push(function(w) {
 		content.ministryTicks[consts.actualMinistries[i]].push(utils.ministryTick);
 	}
 	
-	w.ministries.MoM.priorities = function(spec) {return utils.getActualEndurance(spec)+utils.getActualCharisma(spec)};
-	w.ministries.MAS.priorities = function(spec) {return utils.getActualIntellect(spec)};
-	w.ministries.MI.priorities = function(spec) {return utils.getActualCharisma(spec)};
-	w.ministries.MoP.priorities = function(spec) {return utils.getActualIntellect(spec)+utils.getActualCharisma(spec)};
-	w.ministries.MoA.priorities = function(spec) {return utils.getActualEndurance(spec)};
-	w.ministries.MWT.priorities = function(spec) {return utils.getActualEndurance(spec)+utils.getActualIntellect(spec)};
-	
-	w.ministries.EQ.priorities = function(spec) {return utils.getActualEndurance(spec)+utils.getActualIntellect(spec)+utils.getActualCharisma(spec)};
-	w.ministries.Z.priorities = function(spec) {return utils.getActualEndurance(spec)+utils.getActualIntellect(spec)+utils.getActualCharisma(spec)};
-	w.ministries.OIA.priorities = function(spec) {return utils.getActualEndurance(spec)+utils.getActualIntellect(spec)+utils.getActualCharisma(spec)};
-	
 	let currentMinistry = parseInt(Math.random()*6);
 	for (let i=0; i<60; i++) {
 		let max = 0, id = 0;
 		for (let j=0; j<tarr.length; j++) {
-				if (max < w.ministries[consts.ministries[currentMinistry+1]].priorities(world.specs[tarr[j]])) {
-				max = w.ministries[consts.ministries[currentMinistry+1]].priorities(world.specs[tarr[j]]);
+				if (max < content.ministryPriorities[consts.ministries[currentMinistry+1]](world.specs[tarr[j]])) {
+				max = content.ministryPriorities[consts.ministries[currentMinistry+1]](world.specs[tarr[j]]);
 				id = j;
 			}
 		}

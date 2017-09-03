@@ -92,7 +92,7 @@ content.works.w_healing = {
 	target:2,
 	maxWorkers:1,
 	minWorkers:1,
-	onlyOne:false,
+	onlyOne:true,
 	type:['relax'],
 	updateInterval:utils.time2ms({date:1}),
 	
@@ -146,7 +146,7 @@ content.works.w_movement = {
 	
 	calcCost:function(ids, ministry, location) {
 		let sp = this.massRequiments(ids, ministry, location);
-		return {text: parseInt(content.roadmap[world.specs[ids[0]].location][location]*world.data.travelSpeed*100/sp/60/12)+this.data.days};
+		return {text: parseInt(world.roadmap[world.specs[ids[0]].location][location]*world.data.travelSpeed*100/sp/60/12)+this.data.days};
 	},
 	requiments:function(spec, ministry, location) {
 		if (spec.location == location) return 0;
@@ -167,7 +167,7 @@ content.works.w_movement = {
 		t.data.speed = this.massRequiments(t.workers, t.ministry, t.location);
 	},
 	whenStartPerSpec:function(t, spec) {
-		t.target = content.roadmap[spec.location][t.location]*world.data.travelSpeed;
+		t.target = world.roadmap[spec.location][t.location]*world.data.travelSpeed;
 	},
 	whenComplete:function(t) {
 		for (let i=0; i<t.workers.length; i++)
@@ -191,7 +191,7 @@ content.works.w_hire = {
 	target:1,
 	maxWorkers:-1,
 	minWorkers:0,
-	onlyOne:false,
+	onlyOne:true,
 	updateInterval:360,
 	data:{
 		string:'Нанять специалиста?'

@@ -1,0 +1,8 @@
+03.09.2017
+- added utils.getTaskById(id) (returns first world task object with that id);
+- tasks in content.worklists.perSpec (checking by task.id, task.targetSpec, task.ministry, task.location) and content.worklists.withSpec (same, but task.workers[0] instead of task.targetSpec) may have onlyOne:true;
+- work.w_healing and work_w_hire now have onlyOne:true;
+- strings from work management window put lang.js;
+- some code from worldCreation removed to gameCreation;
+- work.whenStoppedPerSpec now calls with attributes task and spec;
+- player cannot remove alien specialists from task from now.
