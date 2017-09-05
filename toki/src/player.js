@@ -1,6 +1,6 @@
 "use strict";
 for (let i=0; i<m.length; i++) {
-	if (m[i] == "src/player.js") {
+	if (m[i] == "toki/src/player.js") {
 		m.splice(i+1, 0, "https://www.youtube.com/iframe_api");
 		break;
 	}
