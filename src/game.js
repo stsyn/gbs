@@ -1,8 +1,8 @@
 "use strict";
 content.gameLaunchers.push(function() {
 	game.UI.currentSpec = world.specs[0];
-	utils.changeSpeed(3);
-	setTimeout(function() {if (world.currentSpeed == 0) utils.changeSpeed(1)}, 5000);
+	utils.pauseGame();
+	setTimeout(function() {if (world.currentSpeed == 0) utils.unpauseGame()}, 5000);
 	
 	game.player.ministry = world.ministries.OIA;
 	game.player.resources.money = world.ministries.OIA.money;
@@ -35,6 +35,9 @@ content.gameCreators.push(function() {
 
 content.gameCreators.push(function() {
 	utils.preparePerks();
+	
+	world.currentSpeed = 2;
+	game.UI.pauses = 0;
 	
 	game.UI.popups = [];
 	game.UI.selectedMinistry = 'OIA';
@@ -193,7 +196,6 @@ content.gameCreators.push(function() {
 });
 
 content.gameCycles.main = function() {
-	if (world.currentSpeed == undefined) world.currentSpeed = 2;
 	setTimeout(content.gameCycles.main, 1000/consts.fps);
 	playerStateUpdate();
 	document.querySelector('#top .c').innerHTML = utils.getTime(world.time);
@@ -444,9 +446,10 @@ content.gameCycles.main = function() {
 		game.UI.cityWorks = content.worklists.perCity.map(function(work) {
 			game.UI.hasCityWorks = true;
 			
-			return Inferno.createElement('div', {className:'line linebar dd b', onClick:function() {
+			if (work.noneRequiments(game.player.ministry.id, l_city.id, undefined)>0) return Inferno.createElement('div', {className:'line linebar dd b', onClick:function() {
 				utils.prepareTaskWindow(work, l_city.id, game.player.ministry.id);
 			}}, 
+				Inferno.createElement('div', {className:'p',style:'width:'+work.noneRequiments(game.player.ministry.id, l_city.id, undefined)+'%'}, null),
 				Inferno.createElement('div', {className:'d'}, 
 					Inferno.createElement('div', {className:'task', style:'background-image:url('+work.iconUrl+');background-position: '+(-work.iconOffset*100)+'% 0'}, ' '),
 					work.name
@@ -695,7 +698,7 @@ content.gameCycles.main = function() {
 		
 		game.UI.hasPerWorks = false;
 		game.UI.specPerWorks = content.worklists.perSpec.map(function(work) {
-			if (work.massRequiments([], l_spec.ministry, l_spec.location, l_spec.id) > 0) {
+			if (work.noneRequiments(l_spec.ministry, l_spec.location, l_spec.id) > 0) {
 				game.UI.hasPerWorks = true;
 				let resList = '', cost = work.calcCost([], l_spec.ministry, l_spec.location, l_spec);
 				let payable=true;
@@ -743,11 +746,11 @@ content.gameCycles.main = function() {
 				}
 				
 				return Inferno.createElement('div', {className:'line linebar dd b', onClick:click}, 
-					Inferno.createElement('div', {className:'p',style:'width:'+work.massRequiments([], l_spec.ministry, l_spec.location, l_spec.id)+'%'}, null),
+					Inferno.createElement('div', {className:'p',style:'width:'+work.noneRequiments(l_spec.ministry, l_spec.location, l_spec.id)+'%'}, null),
 					Inferno.createElement('div', {className:'d'}, 
 						Inferno.createElement('div', {className:'task', style:'background-image:url('+work.iconUrl+');background-position: '+(-work.iconOffset*100)+'% 0'}, ' '),
 						work.name,
-						Inferno.createElement('div', {className:'c'}, work.massRequiments([], l_spec.ministry, l_spec.location, l_spec.id)+'%')
+						Inferno.createElement('div', {className:'c'}, work.noneRequiments(l_spec.ministry, l_spec.location, l_spec.id)+'%')
 					),
 					Inferno.createElement('div', {className:'e'},work.description)
 				)
@@ -974,7 +977,7 @@ content.gameCycles.main = function() {
 
 function m_init() {
 	for (let i=0; i<document.querySelectorAll('#top .ico1').length; i++) {
-		if (i!=document.querySelectorAll('#top .ico1').length-1) document.querySelectorAll('#top .ico1')[i].addEventListener('click', function() {utils.changeSpeed(i)});
+		if (i!=document.querySelectorAll('#top .ico1').length-1) document.querySelectorAll('#top .ico1')[i].addEventListener('click', function() {utils.changeSpeed(document.querySelectorAll('#top .ico1').length-i-1)});
 		else document.querySelectorAll('#top .ico1')[i].classList.add('na');
 	}
 	
@@ -995,8 +998,7 @@ function m_init() {
 	document.querySelector('#specinfo .h').innerHTML = strings.UI.personal;
 	
 	document.querySelectorAll('#top .menukey')[0].addEventListener('click', function() {
-		game.UI.tspeed = document.querySelectorAll('#top .ico1').length-world.currentSpeed-1;
-		utils.changeSpeed(3);
+		utils.pauseGame();
 		document.getElementById('menu').classList.add('d');
 	});
 	document.querySelectorAll('#top .menukey')[1].addEventListener('click', function() {
@@ -1054,8 +1056,7 @@ function m_init() {
 	});
 	
 	document.querySelectorAll('#menu .b.fs')[0].addEventListener('click', function() {
-		if (game.UI.tspeed == 3) game.UI.tspeed = 1;
-		utils.changeSpeed(game.UI.tspeed);
+		utils.unpauseGame();
 		document.getElementById('menu').classList.remove('d');
 	});
 	document.querySelectorAll('#menu .b.fs')[1].addEventListener('click', function() {

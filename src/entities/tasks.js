@@ -34,16 +34,20 @@ class workPattern {
 		this.onlyOne = false;
 		this.type = [];
 		
-		this.calcCost = function(spec, ministry, location, targetSpec) {return {};};	//стоимость в любых применимых попугаях
-		this.massRequiments(ids, ministry, location, targetSpec) 
+		this.calcCost = function(ids, ministry, location, targetSpec) {return {};};	//стоимость в любых применимых попугаях
+		this.noneCalcCost = function(ministry, location, targetSpec) {return {};};	//для массовых заданий, минимальная стоимость
+		
+		this.noneRequiments = function(ministry, location, targetSpec) {return 0;}; //для массовых заданий, когда никто не выбран
+		this.massRequiments = function(ids, ministry, location, targetSpec) {return 0;};		//для массовых заданий, проверка готовности
 		this.requiments = function(spec, ministry, location, targetSpec) {return 0;};			//проверяет пригодность специалиста. 1~100 выдаст в процентах эффективность, отрицательное и 0 - негоден
-		this.whenStart = function(task) {return 0;};
-		this.whenStartdPerSpec = function(task, worker) {return 0;};
-		this.whenComplete = function(task) {return 0;};
-		this.update = function(task) {return 0;};
-		this.updatePerSpec = function(task, worker) {return 0};
-		this.whenFailed = function(task) {return 0;};
-		this.whenStopPerSpec = function(task, worker) {return 0;};
-		this.whenStop = function(task) {return 0;};
+		
+		this.whenStart = function(task) {};
+		this.whenStartPerSpec = function(task, spec) {};
+		this.whenComplete = function(task) {};
+		this.update = function(task) {};
+		this.updatePerSpec = function(task, spec) {};
+		this.whenFailed = function(task) {};
+		this.whenStopPerSpec = function(task, spec) {};
+		this.whenStop = function(task) {};
 	}
 }

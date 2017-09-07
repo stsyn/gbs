@@ -1,3 +1,7 @@
+07.09.2017
+- added stacked pause engine. Use utils.pauseGame() and utils.unpauseGame();
+- added works.noneCalcCost(ministry, location, targetSpec), works.noneRequiments(ministry, location, targetSpec) for menu works listings. works.massRequiments(ids, ministry, location, targetSpec) with zero-length ids is now deprecated and no longer using.
+
 03.09.2017
 - added utils.getTaskById(id) (returns first world task object with that id);
 - tasks in content.worklists.perSpec (checking by task.id, task.targetSpec, task.ministry, task.location) and content.worklists.withSpec (same, but task.workers[0] instead of task.targetSpec) may have onlyOne:true;

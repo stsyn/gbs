@@ -23,6 +23,32 @@ function consts_proto() {
 var consts = new consts_proto();
 var utils = {
 
+	pauseGame() {
+		if (game.UI.pauses==0) {
+			game.UI.tspeed = world.currentSpeed;
+			utils.changeSpeed(0);
+		}
+		game.UI.pauses++;
+	},
+	
+	unpauseGame() {
+		if (game.UI.pauses>0) game.UI.pauses--;
+		if (game.UI.pauses==0) {
+			utils.changeSpeed(game.UI.tspeed);
+		}
+	},
+
+	changeSpeed(tid) {
+		if (tid != 0) game.UI.pauses = 0;
+		for (let i=0; i<document.querySelectorAll('#top .ico1').length; i++) {
+			if (document.querySelectorAll('#top .ico1').length-i-1 != tid) document.querySelectorAll('#top .ico1')[i].classList.remove('sel'); 
+			else {
+				document.querySelectorAll('#top .ico1')[i].classList.add('sel'); 
+				world.currentSpeed = document.querySelectorAll('#top .ico1').length-i-1;
+			}
+		}
+	},
+
 	saveWorld(silent) {
 		try {
 			localStorage._gbs_world = JSON.stringify(world);
@@ -92,16 +118,6 @@ var utils = {
 		t+=time.minutes;
 		t+=time.hours*60;
 		return t;
-	},
-	
-	changeSpeed(tid) {
-		for (let i=0; i<document.querySelectorAll('#top .ico1').length; i++) {
-			if (i != tid) document.querySelectorAll('#top .ico1')[i].classList.remove('sel'); 
-			else {
-				document.querySelectorAll('#top .ico1')[i].classList.add('sel'); 
-				world.currentSpeed = document.querySelectorAll('#top .ico1').length-i-1;
-			}
-		}
 	},
 
 	addNotify(target, id, level, text) {
@@ -375,14 +391,13 @@ var utils = {
 	},
 		
 	closePopup() {
-		world.currentSpeed = game.UI.tspeed;
+		utils.unpauseGame();
 		let e = document.getElementById("popup");
 		e.parentNode.removeChild(e);
 	},
 	
 	callPopup(popup) {
-		if (world.currentSpeed != 0) game.UI.tspeed = world.currentSpeed;
-		world.currentSpeed = 0;
+		utils.pauseGame();
 		
 		let b;
 		if (popup.buttons!=undefined && popup.buttons.length > 0) {
@@ -795,7 +810,7 @@ var utils = {
 		else {
 			if (!work.hasStarted) return (nums?0:'В очереди');
 		}
-		if (s<0) return (nums?0:'Выполняется...');
+		if (work.target<0) return (nums?0:'Выполняется...');
 		return (nums?s:s+'%');
 	},
 	
@@ -898,7 +913,7 @@ var utils = {
 		document.getElementById("selectSpecs").classList.remove('d');
 		game.UI.bottomSelectionMode = 'view';
 		game.UI.bottomRenderCounter = 0;
-		world.currentSpeed = game.UI.tspeed;
+		utils.unpauseGame();
 	},
 	
 	callTaskWindow() {
@@ -908,8 +923,7 @@ var utils = {
 		game.UI.taskBackHandlerType = 'none';
 		utils.sortSpecList(game.player.ministry.id, game.player.specs, 'workPriority');
 		
-		if (world.currentSpeed != 0) game.UI.tspeed = world.currentSpeed;
-		world.currentSpeed = 0;
+		utils.pauseGame();
 	},
 	
 	prepareTaskWindow(task, location, ministry, specList, targetSpec) {

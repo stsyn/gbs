@@ -18,14 +18,17 @@ content.ministryTicks.MAS.push(function(m) {
 		if (city.owner == 'Z') continue;
 		if (city.ministriesPart.MAS == undefined) continue;
 		let avpart = city.attributes.ponyCount-city.ministriesUsed;
+		
 		if ((m.energy>(100+100/Math.pow(utils.getCityActualIndustrial(city),0.5)+Math.pow(city.ministriesPart.MAS,1.3))) && (Math.random()*Math.random()>city.ministriesDisplayPart[m.id]/100) && (city.ministriesPart[m.id]/50<avpart+content.ministryCityPartDelta.MAS(city))) {
 			let u = utils.getCityActualIndustrial(city)/50;
+			console.log(u);
 			if (u>avpart) u = avpart;
 			city.ministriesPart.MAS += u;
 			city.ministriesUsed+=u;
 			m.energy -= 100/Math.pow(utils.getCityActualIndustrial(city),0.33)+Math.pow(city.ministriesPart.MAS,0.5);
 		}
-		if (m.energy>utils.getCityActualTech(city)+50) {
+		
+		if ((m.energy>utils.getCityActualTech(city)+50) && Math.random()>city.attributes.techPart/100) {
 			m.energy-=utils.getCityActualTech(city);
 			city.attributes.techPart += city.ministriesPart.MAS/50;
 			city.attributes.industrialPart -= city.ministriesPart.MAS/100;
@@ -72,7 +75,7 @@ content.ministryTicks.MWT.push(function(m) {
 			city.ministriesUsed+=u;
 			m.energy -= 100/Math.pow(utils.getCityActualTech(city),0.33)+Math.pow(city.ministriesPart.MWT,0.5);
 		}
-		if (m.energy>utils.getCityActualIndustrial(city)+50) {
+		if ((m.energy>utils.getCityActualIndustrial(city)+50) && Math.random()>city.attributes.industrialPart/100) {
 			m.energy-=utils.getCityActualIndustrial(city);
 			city.attributes.techPart -= city.ministriesPart.MWT/100;
 			city.attributes.industrialPart += city.ministriesPart.MWT/50;
@@ -119,7 +122,7 @@ content.ministryTicks.MoA.push(function(m) {
 			city.ministriesUsed+=u;
 			m.energy -= 100/Math.pow(utils.getCityActualTech(city),0.33)+Math.pow(city.ministriesPart.MoA,0.5);
 		}
-		if (m.energy>utils.getCityActualMilitary(city)+50) {
+		if ((m.energy>utils.getCityActualMilitary(city)+50) && Math.random()>city.attributes.militaryPart/100) {
 			m.energy-=utils.getCityActualMilitary(city);
 			city.attributes.techPart -= city.ministriesPart.MoA/100;
 			city.attributes.industrialPart -= city.ministriesPart.MoA/100;
