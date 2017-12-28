@@ -4,6 +4,7 @@
             <File name="i\legal.txt" />
             <File name="i\devchangelog.txt" />
             <File name="i\changelog.txt" />
+            <File name="i\todo.txt" />
         </Folder>
         <Folder name="src">
             <Folder name="entities">

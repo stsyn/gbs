@@ -10,3 +10,8 @@
 - some code from worldCreation removed to gameCreation;
 - work.whenStoppedPerSpec now calls with attributes task and spec;
 - player cannot remove alien specialists from task from now.
+
+27.12.2017
+- utils.getActual%statname% now uses spec.shadow.%statName%Mult;
+- calcCost and noneCalcCost in tasks may return 'mainText' field which replaces original text;
+- added utils.fireSpec(spec, affect).

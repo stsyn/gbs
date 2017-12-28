@@ -83,6 +83,90 @@ content.works.w_studying = {
 	whenFailed:function(taskId) {return 0}
 };
 
+content.works.w_fire = {
+	id:'w_fire',
+	iconUrl:'res/icons/tasks.png',
+	iconOffset:4,
+	name:'Уволить',
+	description:'Уволить данного специалиста. Он вернется в расположение исходного министерства.',
+	target:1,
+	maxWorkers:1,
+	minWorkers:1,
+	onlyOne:true,
+	type:['study'],
+	updateInterval:utils.time2ms({date:1}),
+	data:{
+		string:'Уволить специалиста?',
+	},
+	
+	noneCalcCost:function(ministry, location, targetSpec) {
+		return {money:world.specs[ids[0]].attributes.payout*5, mainText:this.data.string};
+	},
+	calcCost:function(ids, ministry, location, targetSpec) {
+		return {money:world.specs[ids[0]].attributes.payout*5, mainText:this.data.string};
+	},
+	requiments:function(spec, ministry, location, targetSpec) {
+		if (spec.internalId == 'GB' || spec.ministry != game.player.ministry.id) return 0;
+		return 100;
+	},
+	noneRequiments:function(ministry, location, targetSpec) {return 100;},
+	massRequiments:function(ids, ministry, location, targetSpec) {return 100;},
+	whenStart:function(taskId) {return 0},
+	whenStartPerSpec:function(task) {return 0},
+	whenComplete:function(t) {
+		utils.fireSpec(t.workers[0], 1);
+	},
+	update:function(t) {
+		utils.completeTask(t);
+	},
+	updatePerSpec:function(task, worker) {return 0},
+	whenStopped:function(taskId) {return 0;},
+	whenStoppedPerSpec:function(taskId) {return 0;},
+	whenFailed:function(taskId) {return 0}
+};
+
+content.works.w_fireFree = {
+	id:'w_fireFree',
+	iconUrl:'res/icons/tasks.png',
+	iconOffset:4,
+	name:'Уволить (без выплат)',
+	description:'Уволить данного специалиста без каких-либо выплат. Он вернется в расположение исходного министерства. Негативно влияет на отношения с министерстврм.',
+	target:1,
+	maxWorkers:1,
+	minWorkers:1,
+	onlyOne:true,
+	type:[],
+	updateInterval:360,
+	data:{
+		string:'Уволить специалиста?',
+	},
+	
+	noneCalcCost:function(ministry, location, targetSpec) { 
+		return {mainText:this.data.string};
+	},
+	calcCost:function(ids, ministry, location, targetSpec) {
+		return {mainText:this.data.string};
+	},
+	requiments:function(spec, ministry, location, targetSpec) {
+		if (spec.internalId == 'GB' || spec.ministry != game.player.ministry.id) return 0;
+		return 100;
+	},
+	noneRequiments:function(ministry, location, targetSpec) {return 100;},
+	massRequiments:function(ids, ministry, location, targetSpec) {return 100;},
+	whenStart:function(taskId) {return 0},
+	whenStartPerSpec:function(task) {return 0},
+	whenComplete:function(t) {
+		utils.fireSpec(t.workers[0], world.specs[t.workers[0]].attributes.involvement);
+	},
+	update:function(t) {
+		utils.completeTask(t);
+	},
+	updatePerSpec:function(task, worker) {return 0},
+	whenStopped:function(taskId) {return 0;},
+	whenStoppedPerSpec:function(taskId) {return 0;},
+	whenFailed:function(taskId) {return 0}
+};
+
 content.works.w_healing = {
 	id:'w_healing',
 	iconUrl:'res/icons/tasks.png',
@@ -209,18 +293,18 @@ content.works.w_hire = {
 		let y = 10-m.specs.get(targetSpec.id);
 		if (y<0) y = 0;
 		let x = (98-m.stats.loyalty-(100-utils.getSpecSecrecy(targetSpec))*3);
-		if (x<0) return {text:this.data.string};
+		if (x<0) return {mainText:this.data.string};
 		x = Math.pow(x, 2);
-		return {money:parseInt(targetSpec.attributes.payout*x/10), text:this.data.string};
+		return {money:parseInt(targetSpec.attributes.payout*x/10), mainText:this.data.string};
 	},
 	calcCost:function(spec, ministry, location, targetSpec) {
 		let m = world.ministries[targetSpec.ministry];
 		let y = 10-m.specs.get(targetSpec.id);
 		if (y<0) y = 0;
 		let x = (98-m.stats.loyalty-(100-utils.getSpecSecrecy(targetSpec))*3);
-		if (x<0) return {text:this.data.string};
+		if (x<0) return {mainText:this.data.string};
 		x = Math.pow(x, 2);
-		return {money:parseInt(targetSpec.attributes.payout*x/10), text:this.data.string};
+		return {money:parseInt(targetSpec.attributes.payout*x/10), mainText:this.data.string};
 	},
 	noneRequiments:function(ministry, location, targetSpec) {
 		let ts = world.specs[targetSpec];
@@ -517,11 +601,10 @@ content.works.w_watching = {
 };
 
 content.works.w_helping = {
-	//internal system task, do not use as it is!
 	id:'w_helping',
 	iconUrl:'res/icons/tasks.png',
 	iconOffset:7,
-	name:'Курирование ',
+	name:'Курирование',
 	description:'Текущая помощь министерству. Повышает характеристики министерства. Может влиять на характеристики города.',
 	target:-1,
 	maxWorkers:-1,
@@ -549,7 +632,7 @@ content.works.w_helping = {
 	noneCalcCost:function(ministry, location, targetSpec) {return {};},
 	calcCost:function(ids, ministry, location, targetSpec) {return {};},
 	noneRequiments:function(ministry, location, targetSpec) {
-		if (world.cities[location].ministriesPart[this.data.ministryID]>0) return 100;
+		if (world.cities[location].ministriesPart[ministry]>0) return 100;
 		return 0;
 	},
 	massRequiments:function(ids, ministry, location, targetSpec) {
@@ -592,12 +675,12 @@ content.works.w_helping = {
 		let i = Math.pow(a.u, 0.333);
 		let as = Math.pow(a.u, 0.1);
 		
-		console.log(a, i, as, this.data.ministryID, world.ministries[this.data.ministryID].energy, world.ministries[this.data.ministryID].stats.loyalty);
+		console.log(a, i, as, this.data.ministryID, world.ministries[this.ministry].energy, world.ministries[this.ministry].stats.loyalty);
 		
-		world.ministries[this.data.ministryID].stats.loyalty+=i*as/200;
-		world.ministries[this.data.ministryID].energy+=i*as;
+		world.ministries[this.ministry].stats.loyalty+=i*as/200;
+		world.ministries[this.ministry].energy+=i*as;
 		
-		this.data.funcs[this.data.ministryID](t, a);
+		this.data.funcs[this.ministry](t, a);
 	},
 	updatePerSpec:function(t, spec) {
 		if (Math.random() < utils.getIntellect(spec)) spec.stats.experience+=Math.random();
@@ -636,12 +719,16 @@ function m_init() {
 	content.worklists.withSpec.push(content.works.w_intStudying);
 	content.worklists.withSpec.push(content.works.w_endStudying);
 	content.worklists.withSpec.push(content.works.w_chrStudying);
+	content.worklists.withSpec.push(content.works.w_fire);
+	content.worklists.withSpec.push(content.works.w_fireFree);
 	
 	content.worklists.perSpec.push(content.works.w_hire);
 	content.worklists.perSpec.push(content.works.w_watching);
 	
 	content.worklists.perCity.push(content.works.w_movement);
-	taskForEachMinistry(content.works.w_helping, 'perCity');
+	
+	content.worklists.perMinistry.push(content.works.w_helping);
+	//taskForEachMinistry(content.works.w_helping, 'perCity');
 	
 	return 0;
 }

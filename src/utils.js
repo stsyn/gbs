@@ -209,18 +209,19 @@ var utils = {
 	
 	getLevel(spec) {return spec.stats.level+1},
 	
-	getActualCharisma(spec) {return parseInt(Math.pow(utils.getCharisma(spec),1.5)*utils.levelAmplifier(spec))},
+	getActualCharisma(spec) {return parseInt(Math.pow(utils.getCharisma(spec),1.5)*utils.levelAmplifier(spec)*spec.shadow.charismaMult)},
 	
-	getActualIntellect(spec) {return parseInt(Math.pow(utils.getIntellect(spec),1.5)*utils.levelAmplifier(spec))},
+	getActualIntellect(spec) {return parseInt(Math.pow(utils.getIntellect(spec),1.5)*utils.levelAmplifier(spec)*spec.shadow.intellectMult)},
 	
-	getActualEndurance(spec) {return parseInt(Math.pow(utils.getEndurance(spec),1.5)*utils.levelAmplifier(spec)*(spec.stats.specie==3?5:1))},
+	getActualEndurance(spec) {return parseInt(Math.pow(utils.getEndurance(spec),1.5)*utils.levelAmplifier(spec)*(spec.stats.specie==3?5:1)*spec.shadow.enduranceMult)},
 	
 	getSatisfaction(spec) {
 		let i, s=spec.shadow.workSatisfactionMult+spec.shadow.workTypeSatisfactionMult+spec.shadow.payoutSatisfactionMult;
 		i = parseInt(
-			spec.attributes.workSatisfaction*spec.shadow.workSatisfactionMult*(spec.attributes.workSatisfaction<0?spec.shadow.workPenaltyMult:spec.shadow.relaxSatisfactionMult)/s + 
-			spec.attributes.worktypeSatisfaction*spec.shadow.workTypeSatisfactionMult/s +
-			spec.attributes.payoutSatisfaction*spec.shadow.payoutSatisfactionMult/s
+			spec.attributes.workSatisfaction*spec.shadow.workSatisfactionMult*(
+				spec.attributes.workSatisfaction<0?spec.shadow.workPenaltyMult:spec.shadow.relaxSatisfactionMult)/s + 
+				spec.attributes.worktypeSatisfaction*spec.shadow.workTypeSatisfactionMult/s +
+				spec.attributes.payoutSatisfaction*spec.shadow.payoutSatisfactionMult/s
 			) + spec.shadow.satisfactionBonus;
 		if (spec.attributes.payout !=0) i -= (spec.attributes.unpaid*10/spec.attributes.payout)
 		i = parseInt((i+70)/2);
@@ -541,8 +542,16 @@ var utils = {
 		specList.sort(sortType[type]);
 	},
 	
+	fireSpec(id, affect) {
+		utils.spec2ministry(id, world.specs[id].prevOwner);
+		delete world.specs[id].prevOwner;
+		world.specs[id].attributes.satisfaction-=affect;
+		world.ministries[world.specs[id].ministry].stats.loyalty-=affect/10;
+	},
+	
 	spec2ministry(id, ministry) {
 		let spec = world.specs[id];
+		if (spec.prevOwner == undefined) spec.prevOwner = spec.ministry;
 		if (spec.ministry != undefined && spec.ministry != ministry) {
 			spec.attributes.secrecy = utils.getSpecSecrecy(spec);
 			for (let i=0; i<world.ministries[spec.ministry].specs.length; i++) {
@@ -598,7 +607,12 @@ var utils = {
 		
 		//перерасчет удовлетворения работой
 		if (spec.attributes.workbalance < -consts.workOverflow*6) {
-			spec.attributes.health-=spec.shadow.workHealthMult*0.5;
+			if (Math.random()>0.25) {
+				spec.attributes.health-=parseInt(spec.shadow.workHealthMult*
+					(content.works[utils.getCurrentWork(spec).id].type.has('military')?50:1)*
+					(content.works[utils.getCurrentWork(spec).id].type.has('dangerous')?10:1)
+				);
+			}
 			spec.attributes.workbalance = -consts.workOverflow*6;
 			spec.attributes.workSatisfaction--;
 		}

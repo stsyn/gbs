@@ -432,16 +432,45 @@ content.gameCycles.main = function() {
 		game.UI.specsInCityList = game.UI.specsInCity.map(game.UI.generateSpecLine);
 		
 		game.UI.ministriesInCity = [];
-		for (let m in l_city.ministriesPart) game.UI.ministriesInCity.push(
-			Inferno.createElement('div', {className:'line linebar'}, 
-				Inferno.createElement('div', {className:'p',style:'width:'+((l_city.ministriesDisplayPart[m]>100)?100:l_city.ministriesDisplayPart[m])+'%'}, null),
-				Inferno.createElement('div', {className:'d'}, world.ministries[m].info.name,
-					Inferno.createElement('span', {className:'c'}, parseInt(l_city.ministriesPart[m])+' ('+parseInt(l_city.ministriesDisplayPart[m])+'%)')
-				)
-			)
-		);
-		
+		for (let m in l_city.ministriesPart) {
+			let ministryHasTasks = false;
+			let ministryTasks = content.worklists.perMinistry.map(function(work) {
 			
+				if (work.noneRequiments(m, l_city.id, undefined)>0) {
+					ministryHasTasks = true;
+					return Inferno.createElement('div', {className:'line linebar dd b', onClick:function() {
+						utils.prepareTaskWindow(work, l_city.id, m);
+					}}, 
+						Inferno.createElement('div', {className:'p',style:'width:'+work.noneRequiments(m, l_city.id, undefined)+'%'}, null),
+						Inferno.createElement('div', {className:'d'}, 
+							Inferno.createElement('div', {className:'task', style:'background-image:url('+work.iconUrl+');background-position: '+(-work.iconOffset*100)+'% 0'}, ' '),
+							work.name
+						),
+						Inferno.createElement('div', {className:'e'},work.description)
+					);
+				}
+			});
+		
+			//ministries line
+			game.UI.ministriesInCity.push(
+				Inferno.createElement('div', {className:'line linebar dd', onClick:function() {
+					/*utils.callPopup({
+						text:strings.UI.messages.ministryInCityTask.replace('%city%', c_city.name).replace('%ministry%', (strings.useCases?strings.cased.g.ministries[m]:strings.ministries[m])),
+						buttons:[{
+							text: 'Отмена',
+							callback: function() {utils.closePopup('work_'+game.UI.currentSpec.stats.experience)}
+						}]
+					})*/
+				}}, 
+					Inferno.createElement('div', {className:'p',style:'width:'+((l_city.ministriesDisplayPart[m]>100)?100:l_city.ministriesDisplayPart[m])+'%'}, null),
+					Inferno.createElement('div', {className:'d'}, world.ministries[m].info.name,
+						Inferno.createElement('span', {className:'c'}, parseInt(l_city.ministriesPart[m])+' ('+parseInt(l_city.ministriesDisplayPart[m])+'%)')
+					),
+					(ministryHasTasks?Inferno.createElement('div', {className:'e'},ministryTasks):null)
+				)
+			);
+		}
+		
 		game.UI.hasCityWorks = false;
 		game.UI.cityWorks = content.worklists.perCity.map(function(work) {
 			game.UI.hasCityWorks = true;
@@ -622,6 +651,7 @@ content.gameCycles.main = function() {
 			));
 		}
 		
+		//сообщения при специалисте
 		game.UI.specNotes = l_spec.messages.map(function (u) {
 			let m = utils.getMessage(u);
 			return Inferno.createElement('div', {className:'t2'+(m.read?'':' red')},
@@ -636,6 +666,7 @@ content.gameCycles.main = function() {
 			)
 		});
 		
+		//работы для специалиста
 		game.UI.hasWorks = false;
 		game.UI.specWorks = content.worklists.withSpec.map(function(work) {
 			if (work.requiments(l_spec, l_spec.ministry, l_spec.location) > 0) {
@@ -646,6 +677,7 @@ content.gameCycles.main = function() {
 					let unf = '';
 					for (let k in cost) {
 						if (k == 'text') unf = cost[k];
+						else if (k == 'mainText') continue;
 						else {
 							resList+= strings.resources[k]+': '+parseInt(cost[k])+' ('+strings.UI.messages.resHave+parseInt(game.player.resources[k].value)+')\n';
 							if (game.player.resources[k].value<cost[k]) payable = false;
@@ -671,7 +703,7 @@ content.gameCycles.main = function() {
 				return Inferno.createElement('div', {className:'line linebar dd b', onClick:function() {
 					let specId = 0;
 					utils.callPopup({
-						text:(l_spec.tasks.length==0?strings.UI.messages.work:strings.UI.messages.workBusy)+'\n'+resList,
+						text: (cost.mainText!=undefined?cost.mainText:strings.UI.messages.textWork)+(l_spec.tasks.length==0?'':strings.UI.messages.textWorkBusy)+(resList==''?'':strings.UI.messages.textWorkResources+'\n'+resList),
 						buttons:[{
 							text: (payable?strings.UI.messages.ok:strings.UI.messages.notEnoughRes),
 							callback: (payable?function() {
@@ -696,6 +728,7 @@ content.gameCycles.main = function() {
 			
 		});
 		
+		//работы со специалистом
 		game.UI.hasPerWorks = false;
 		game.UI.specPerWorks = content.worklists.perSpec.map(function(work) {
 			if (work.noneRequiments(l_spec.ministry, l_spec.location, l_spec.id) > 0) {
@@ -706,6 +739,7 @@ content.gameCycles.main = function() {
 					let unf = '';
 					for (let k in cost) {
 						if (k == 'text') unf = cost[k];
+						else if (k == 'mainText') continue;
 						else {
 							resList+= strings.resources[k]+': '+parseInt(cost[k])+' ('+strings.UI.messages.resHave+parseInt(game.player.resources[k].value)+')\n';
 							if (game.player.resources[k].value<cost[k]) payable = false;
@@ -728,7 +762,7 @@ content.gameCycles.main = function() {
 					}
 					if (u) return;
 					click = function() {utils.callPopup({
-						text:resList,
+						text: (cost.mainText!=undefined?cost.mainText:strings.UI.messages.textWork)+(l_spec.tasks.length==0?'':strings.UI.messages.textWorkBusy)+(resList==''?'':strings.UI.messages.textWorkResources+'\n'+resList),
 						buttons:[{
 							text: (payable?strings.UI.messages.ok:strings.UI.messages.notEnoughRes),
 							callback: (payable?function() {

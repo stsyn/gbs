@@ -535,9 +535,11 @@ input:checked + label, input:checked + label .b{background:#cfc !important}
 }
 .ux.st {text-align:left}
 .ux.st .t:first-child {width:3em; text-align:center}
-.dd .e{
+.dd>.e{
+	line-height:1.2em;
 	display: none;
     position: absolute;
+	text-align: left;
     background: #114;
     padding: 0.9%;
 	right: 0;
@@ -549,7 +551,7 @@ input:checked + label, input:checked + label .b{background:#cfc !important}
 	top:100%;
 	bottom:auto;
 }
-.dd:hover .e{
+.dd:hover>.e{
 	display:block;
 }
 #windows #specialists .w .cc .t,

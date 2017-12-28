@@ -11,22 +11,52 @@
 
 */
 
+let mins = {
+	extend:function(m, ax) {
+		if (m.energy>2000) {
+			let x = parseInt(Math.random()*world.cities.length);
+			for (let cityName in world.cities) {
+				if (x>0) {
+					x--;
+					continue;
+				}
+				let city = world.cities[cityName];
+				if (city.ministriesPart[m.id] > 0) break;
+				if (m.energy>2000+city.attributes.ponyCount*10 && ax(city)>5) {
+					city.ministriesPart[m.id] = ax(city)/5;
+					m.energy-=(1850+city.attributes.ponyCount*10);
+					break;
+				}
+			}
+		}
+	},
+	cityExtend:function(m, city) {
+		if (city.owner == 'Z') return;
+		if (city.ministriesPart[m.id] == undefined) return;
+		let avpart = city.attributes.ponyCount-city.ministriesUsed;
+		
+		for (let i=0; i<m.energy/500; i++) {
+			if (
+				(m.energy>(100+100/Math.pow(content.ministryCityPartDelta[m.id]*5,0.5)+Math.pow(city.ministriesPart[m.id],1.3))) && 
+				(Math.random()*Math.random()>city.ministriesDisplayPart[m.id]/100) && (city.ministriesPart[m.id]/50<avpart+content.ministryCityPartDelta[m.id](city))
+			) {
+				let u = content.ministryCityPartDelta[m.id]/10;
+				console.log(u);
+				if (u>avpart) u = avpart;
+				city.ministriesPart[m.id] += u;
+				city.ministriesUsed+=u;
+				m.energy -= 100/Math.pow(content.ministryCityPartDelta[m.id]*5,0.33)+Math.pow(city.ministriesPart[m.id],0.5);
+			}
+		}
+	}
+};
+
 content.ministryTicks.MAS.push(function(m) {
 	if (m.data.cityMultAplied == undefined) m.data.cityMultAplied = {};
 	for (let cityName in world.cities) {
 		let city = world.cities[cityName];
-		if (city.owner == 'Z') continue;
-		if (city.ministriesPart.MAS == undefined) continue;
-		let avpart = city.attributes.ponyCount-city.ministriesUsed;
 		
-		if ((m.energy>(100+100/Math.pow(utils.getCityActualIndustrial(city),0.5)+Math.pow(city.ministriesPart.MAS,1.3))) && (Math.random()*Math.random()>city.ministriesDisplayPart[m.id]/100) && (city.ministriesPart[m.id]/50<avpart+content.ministryCityPartDelta.MAS(city))) {
-			let u = utils.getCityActualIndustrial(city)/50;
-			console.log(u);
-			if (u>avpart) u = avpart;
-			city.ministriesPart.MAS += u;
-			city.ministriesUsed+=u;
-			m.energy -= 100/Math.pow(utils.getCityActualIndustrial(city),0.33)+Math.pow(city.ministriesPart.MAS,0.5);
-		}
+		mins.cityExtend(m, city);
 		
 		if ((m.energy>utils.getCityActualTech(city)+50) && Math.random()>city.attributes.techPart/100) {
 			m.energy-=utils.getCityActualTech(city);
@@ -43,38 +73,15 @@ content.ministryTicks.MAS.push(function(m) {
 			city.attributes.techMult /= 3;
 		}
 	}
-	if (m.energy>2000) {
-		let x = parseInt(Math.random()*world.cities.length);
-		for (let cityName in world.cities) {
-			if (x>0) {
-				x--;
-				continue;
-			}
-			let city = world.cities[cityName];
-			if (city.ministriesPart.MAS > 0) break;
-			if (m.energy>2000+city.attributes.ponyCount*10 && utils.getCityActualIndustrial(city)>5) {
-				city.ministriesPart.MAS = utils.getCityActualIndustrial(city)/5;
-				m.energy-=(1850+city.attributes.ponyCount*10);
-				break;
-			}
-		}
-	}
+	mins.extend(m,utils.getCityActualIndustrial);
 });
 
 content.ministryTicks.MWT.push(function(m) {
 	if (m.data.cityMultAplied == undefined) m.data.cityMultAplied = {};
 	for (let cityName in world.cities) {
 		let city = world.cities[cityName];
-		if (city.owner == 'Z') continue;
-		if (city.ministriesPart.MWT == undefined) continue;
-		let avpart = city.attributes.ponyCount-city.ministriesUsed;
-		if ((m.energy>(100+100/Math.pow(utils.getCityActualTech(city),0.5)+Math.pow(city.ministriesPart.MWT,1.3))) && (Math.random()*Math.random()>city.ministriesDisplayPart[m.id]/100) && (city.ministriesPart[m.id]/50<avpart+content.ministryCityPartDelta.MWT(city))) {
-			let u = utils.getCityActualTech(city)/50;
-			if (u>avpart) u = avpart;
-			city.ministriesPart.MWT += u;
-			city.ministriesUsed+=u;
-			m.energy -= 100/Math.pow(utils.getCityActualTech(city),0.33)+Math.pow(city.ministriesPart.MWT,0.5);
-		}
+		mins.cityExtend(m, city);
+		
 		if ((m.energy>utils.getCityActualIndustrial(city)+50) && Math.random()>city.attributes.industrialPart/100) {
 			m.energy-=utils.getCityActualIndustrial(city);
 			city.attributes.techPart -= city.ministriesPart.MWT/100;
@@ -90,38 +97,15 @@ content.ministryTicks.MWT.push(function(m) {
 			city.attributes.industrialMult /= 3;
 		}
 	}
-	if (m.energy>2000) {
-		let x = parseInt(Math.random()*world.cities.length);
-		for (let cityName in world.cities) {
-			if (x>0) {
-				x--;
-				continue;
-			}
-			let city = world.cities[cityName];
-			if (city.ministriesPart.MWT > 0) break;
-			if (m.energy>2000+city.attributes.ponyCount*10 && utils.getCityActualTech(city)>5) {
-				city.ministriesPart.MWT = utils.getCityActualTech(city)/5;
-				m.energy-=(1850+city.attributes.ponyCount*10);
-				break;
-			}
-		}
-	}
+	mins.extend(m,utils.getCityActualTech);
 });
 
 content.ministryTicks.MoA.push(function(m) {
 	if (m.data.cityMultAplied == undefined) m.data.cityMultAplied = {};
 	for (let cityName in world.cities) {
 		let city = world.cities[cityName];
-		if (city.owner == 'Z') continue;
-		if (city.ministriesPart.MoA == undefined) continue;
-		let avpart = city.attributes.ponyCount-city.ministriesUsed;
-		if ((m.energy>(100+100/Math.pow(utils.getCityActualTech(city),0.5)+Math.pow(city.ministriesPart.MoA,1.3))) && (Math.random()*Math.random()>city.ministriesDisplayPart[m.id]/100) && (city.ministriesPart[m.id]/50<avpart+content.ministryCityPartDelta.MoA(city))) {
-			let u = utils.getCityActualTech(city)/50;
-			if (u>avpart) u = avpart;
-			city.ministriesPart.MoA += u;
-			city.ministriesUsed+=u;
-			m.energy -= 100/Math.pow(utils.getCityActualTech(city),0.33)+Math.pow(city.ministriesPart.MoA,0.5);
-		}
+		mins.cityExtend(m, city);
+		
 		if ((m.energy>utils.getCityActualMilitary(city)+50) && Math.random()>city.attributes.militaryPart/100) {
 			m.energy-=utils.getCityActualMilitary(city);
 			city.attributes.techPart -= city.ministriesPart.MoA/100;
@@ -137,37 +121,14 @@ content.ministryTicks.MoA.push(function(m) {
 			city.attributes.militaryMult /= 3;
 		}
 	}
-	if (m.energy>2000) {
-		let x = parseInt(Math.random()*world.cities.length);
-		for (let cityName in world.cities) {
-			if (x>0) {
-				x--;
-				continue;
-			}
-			let city = world.cities[cityName];
-			if (city.ministriesPart.MWT > 0) break;
-			if (m.energy>2000+city.attributes.ponyCount*10 && utils.getCityActualTech(city)>5) {
-				city.ministriesPart.MWT = utils.getCityActualTech(city)/5;
-				m.energy-=(1850+city.attributes.ponyCount*10);
-				break;
-			}
-		}
-	}
+	mins.extend(m,utils.getCityActualTech);
 });
 
 content.ministryTicks.MoP.push(function(m) {
 	for (let cityName in world.cities) {
 		let city = world.cities[cityName];
-		if (city.owner == 'Z') continue;
-		if (city.ministriesPart.MoP == undefined) continue;
-		let avpart = city.attributes.ponyCount-city.ministriesUsed;
-		if ((m.energy>(100+100/Math.pow(utils.getCityActualIndustrial(city),0.5)+Math.pow(city.ministriesPart.MoP,1.3))) && (Math.random()*Math.random()>city.ministriesDisplayPart[m.id]/100) && (city.ministriesPart[m.id]/50<avpart+content.ministryCityPartDelta.MoP(city))) {
-			let u = utils.getCityActualIndustrial(city)/50;
-			if (u>avpart) u = avpart;
-			city.ministriesPart.MoP += u;
-			city.ministriesUsed+=u;
-			m.energy -= 100/Math.pow(utils.getCityActualIndustrial(city),0.33)+Math.pow(city.ministriesPart.MoP,0.5);
-		}
+		mins.cityExtend(m, city);
+		
 		if (city.ministriesDisplayPart.MoP > 50) {
 			city.attributes.ratio+=0.12;
 			let specs = world.specs.filter(function(spec) {
@@ -179,76 +140,28 @@ content.ministryTicks.MoP.push(function(m) {
 			}
 		}
 	}
-	if (m.energy>2000) {
-		let x = parseInt(Math.random()*world.cities.length);
-		for (let cityName in world.cities) {
-			if (x>0) {
-				x--;
-				continue;
-			}
-			let city = world.cities[cityName];
-			if (city.ministriesPart.MoP > 0) break;
-			if (m.energy>2000+city.attributes.ponyCount*10 && utils.getCityActualIndustrial(city)>5) {
-				city.ministriesPart.MoP = utils.getCityActualIndustrial(city)/5;
-				m.energy-=(1850+city.attributes.ponyCount*10);
-				break;
-			}
-			break;
-		}
-	}
+	mins.extend(m,utils.getCityActualIndustrial);
 });
 
 content.ministryTicks.MI.push(function(m) {
 	for (let cityName in world.cities) {
 		let city = world.cities[cityName];
-		if (city.owner == 'Z') continue;
-		if (city.ministriesPart.MI == undefined) continue;
-		let avpart = city.attributes.ponyCount-city.ministriesUsed;
-		if ((m.energy>(100+100/Math.pow(utils.getCityActualTech(city),0.5)+Math.pow(city.ministriesPart.MI,1.3))) && (Math.random()*Math.random()>city.ministriesDisplayPart[m.id]/100) && (city.ministriesPart[m.id]/50<avpart+content.ministryCityPartDelta.MI(city))) {
-			let u = utils.getCityActualTech(city)/50;
-			if (u>avpart) u = avpart;
-			city.ministriesPart.MI += u;
-			city.ministriesUsed+=u;
-			m.energy -= 100/Math.pow(utils.getCityActualTech(city),0.33)+Math.pow(city.ministriesPart.MI,0.5);
-		}
+		mins.cityExtend(m, city);
+		
 		if (city.ministriesDisplayPart.MI > 50) {
 			for (let cityName2 in world.cities) {
 				world.cities[cityName2].attributes.ratio+=0.12;
 			}
 		}
 	}
-	if (m.energy>2000) {
-		let x = parseInt(Math.random()*world.cities.length);
-		for (let cityName in world.cities) {
-			if (x>0) {
-				x--;
-				continue;
-			}
-			let city = world.cities[cityName];
-			if (city.ministriesPart.MI > 0) break;
-			if (m.energy>2000+city.attributes.ponyCount*10 && utils.getCityActualTech(city)>5) {
-				city.ministriesPart.MI = utils.getCityActualTech(city)/5;
-				m.energy-=(1850+city.attributes.ponyCount*10);
-				break;
-			}
-			break;
-		}
-	}
+	mins.extend(m,utils.getCityActualTech);
 });
 
 content.ministryTicks.MoM.push(function(m) {
 	for (let cityName in world.cities) {
 		let city = world.cities[cityName];
-		if (city.owner == 'Z') continue;
-		if (city.ministriesPart.MoM == undefined) continue;
-		let avpart = city.attributes.ponyCount-city.ministriesUsed;
-		if ((m.energy>(100+100/Math.pow(utils.getCityActualIndustrial(city),0.5)+Math.pow(city.ministriesPart.MoM,1.3))) && (Math.random()*Math.random()>city.ministriesDisplayPart[m.id]/100) && (city.ministriesPart[m.id]/50<avpart+content.ministryCityPartDelta.MoM(city))) {
-			let u = utils.getCityActualIndustrial(city)/50;
-			if (u>avpart) u = avpart;
-			city.ministriesPart.MoM += u;
-			city.ministriesUsed+=u;
-			m.energy -= 100/Math.pow(utils.getCityActualIndustrial(city),0.33)+Math.pow(city.ministriesPart.MoM,0.5);
-		}
+		mins.cityExtend(m, city);
+		
 		if (city.ministriesDisplayPart.MoM > 50) {
 			let specs = world.specs.filter(function(spec) {
 				return (spec.location == city.id && utils.ownedByPlayer(spec))
@@ -260,24 +173,7 @@ content.ministryTicks.MoM.push(function(m) {
 			world.ministries.EQ.stats.loyalty+=0.1;
 		}
 	}
-	
-	if (m.energy>2000) {
-		let x = parseInt(Math.random()*world.cities.length);
-		for (let cityName in world.cities) {
-			if (x>0) {
-				x--;
-				continue;
-			}
-			let city = world.cities[cityName];
-			if (city.ministriesPart.MoM > 0) break;
-			if (m.energy>2000+city.attributes.ponyCount*10 && utils.getCityActualIndustrial(city)>5) {
-				city.ministriesPart.MoM = utils.getCityActualIndustrial(city)/5;
-				m.energy-=(1850+city.attributes.ponyCount*10);
-				break;
-			}
-			break;
-		}
-	}
+	mins.extend(m,utils.getCityActualIndustrial);
 });
 
 content.ministryTicks.EQ.push(function(m) {

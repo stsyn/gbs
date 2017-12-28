@@ -1,0 +1,11 @@
+<NotepadPlus>
+    <Project name="GBS.docs">
+        <Folder name="content">
+            <Folder name="media" />
+            <File name="content\content.js" />
+        </Folder>
+        <File name="style.css" />
+        <File name="engine.js" />
+        <File name="index.html" />
+    </Project>
+</NotepadPlus>
