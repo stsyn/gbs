@@ -3,7 +3,7 @@ class spec {
 	constructor(spec = {
 		stats:{name:'',charisma:0,intellect:0,endurance:0,level:undefined,experience:undefined,gender:0,specie:undefined,
 			portrait:{url:''}},
-		attributes:{payout:undefined,maxHealth:0,involvement:0,payoutSatisfaction:0,workSatisfaction:90,worktypeSatisfaction:50,workbalance:0,secrecy:100},
+		attributes:{payout:undefined,maxHealth:0,involvement:0,/*payoutSatisfaction:0,*/workSatisfaction:90,worktypeSatisfaction:50,workbalance:0,secrecy:100},
 		data:{},
 		ministry:null,owner:null,location:null,perks:null,isPerkExplored:[],tasks:[],messages:[],notifyLevel:null
 	}) {
@@ -15,8 +15,8 @@ class spec {
 		this.shadow.enduranceMult = 1;
 		this.shadow.maxHealthMult = 1;
 		this.shadow.levelUpExpMult = 1;
-		this.shadow.payoutSatisfactionMult = 1;
-		this.shadow.payoutLoyaltyMult = 1;
+		//this.shadow.payoutSatisfactionMult = 1;
+		//this.shadow.payoutLoyaltyMult = 1;
 		this.shadow.satisfactionLoyaltyMult = 1;
 		this.shadow.speedMult = 1;
 		this.shadow.workSatisfactionMult = 1;
@@ -46,7 +46,10 @@ class spec {
 		if (spec.stats == undefined) spec.stats = {};
 		if (spec.stats.portrait == undefined) spec.stats.portrait = {};
 		if (spec.attributes == undefined) spec.attributes = {};
+		if (spec.dialState == undefined) spec.dialState = {};
 		
+		this.dialState = spec.dialState;
+		if (this.dialState.id != undefined) this.dialState = new dialState(this, content.dialogues[this.dialState.id]);
 		this.stats = spec.stats;
 		this.attributes = spec.attributes;
 		if (this.attributes == undefined) this.attributes = {};
@@ -54,11 +57,11 @@ class spec {
 		if (this.attributes.involvement == undefined) this.attributes.involvement=0;
 		if (this.attributes.workSatisfaction == undefined) this.attributes.workSatisfaction=90;
 		if (this.attributes.worktypeSatisfaction == undefined) this.attributes.worktypeSatisfaction=100;
-		if (this.attributes.payoutSatisfaction == undefined) this.attributes.payoutSatisfaction=0;
+		//if (this.attributes.payoutSatisfaction == undefined) this.attributes.payoutSatisfaction=0;
 		if (this.attributes.workbalance == undefined) this.attributes.workbalance=0;
 		if (this.attributes.secrecy == undefined) this.attributes.secrecy=100;
-		if (this.attributes.unpaid == undefined) this.attributes.unpaid=0;
-		if (this.attributes.lastPayout == undefined) this.attributes.lastPayout=0;
+		//if (this.attributes.unpaid == undefined) this.attributes.unpaid=0;
+		//if (this.attributes.lastPayout == undefined) this.attributes.lastPayout=0;
 		this.ministry = spec.ministry;
 		this.owner = spec.owner;
 		this.location = spec.location;
@@ -113,8 +116,8 @@ class spec {
 			for (let i=0; i<spec.perks.length; i++) utils.addPerk(this, spec.perks[i]);
 		}
 	
-		if (this.attributes.payout == undefined) utils.calcPayout(this);
-		this.attributes.currentPayout = this.attributes.payout;
+		//if (this.attributes.payout == undefined) utils.calcPayout(this);
+		//this.attributes.currentPayout = this.attributes.payout;
 		if (this.stats.name == '' || this.stats.name == undefined) {
 			let t = utils[consts.speciesNameGenerFunction[this.stats.specie]](this);
 			this.stats.name = t.n;

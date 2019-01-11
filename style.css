@@ -423,6 +423,16 @@ input:checked + label, input:checked + label .b{background:#cfc !important}
 	left:5%;
 	height:70%;
 	top:5%}
+#windows .w.whd {
+	background: none;
+	width:90%;
+	left:5%;
+	height:55%;
+	box-shadow:none;
+	top:40%}
+#windows .w.whd.low {
+	height:25%;
+	top:70%}
 #windows .w.huge {
 	width:90%;
 	left:5%;
@@ -636,6 +646,43 @@ input:checked + label, input:checked + label .b{background:#cfc !important}
 #windows #ministries .pad {
 	display:block;
 	float:left;}
+.dial-container{
+	position: relative;
+    height: 100%;
+    width: 100%;
+    overflow: visible;
+}
+.dial-portrait{
+	width: 20%;
+    position: absolute;
+}
+.dial-actions{
+	margin-top:3%;
+}
+.dial-continue {
+	padding: 2%;
+	color: #999;
+	font-style: italic;
+}
+.dial-name {
+	color: #fe0;
+    font-size: 200%;
+    left: 23%;
+    position: absolute;
+    top: 10%;
+}
+.dial-text {
+	font-size: 120%;
+    position: absolute;
+    overflow-y: auto;
+    margin: 3% 5% 0;
+    width: 75%;
+    height: 77%;
+    background: #000;
+    padding-left: 15%;
+    padding-top: 4%;
+	box-shadow: 0 0 10px rgba(0,0,0,0.5);
+}
 .pad.sp_inv {
 	padding:0;
 	margin: 1% 0;
@@ -646,7 +693,9 @@ input:checked + label, input:checked + label .b{background:#cfc !important}
 	position:relative;
 	padding:0;}
 .pad.sp_img img,
-.pad.sp_img svg {
+.pad.sp_img svg,
+.dial-portrait img,
+.dial-portrait svg{
 	width:100%;
 	display: block;
 	padding:0;

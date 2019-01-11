@@ -31,6 +31,8 @@ content.gameLaunchers = [];
 content.portraits = {};
 content.portraitsListing = [];
 
+content.dialogues = {};
+
 content.ministryTicks = {};
 content.ministryTicks.MAS = [];
 content.ministryTicks.MoP = [];

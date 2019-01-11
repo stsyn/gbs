@@ -6,6 +6,7 @@ function world_proto() {
 	this.cities = {};
 	this.messages = [];
 	this.lastMessageId = 0;
+	this.unattachedDialState = {};
 	this.time = 0;
 	
 	this.data = {};
@@ -13,11 +14,13 @@ function world_proto() {
 	this.data.specs = 0;
 	this.data.taskStartTimeout = 240;
 	this.data.travelSpeed = 300;
+	
 	this.roadmap = content.roadmap;
 	this.homecity = 'canterlot';
 };
 var world = new world_proto();
 content.worldCreators.push(function(w) {
+	w.unattachedDialState = new dialState({id:-1},{});
 	w.time = 0;
 	w.dcounter = utils.time2ms({date:1});
 	document.querySelectorAll('#top .ico1')[1].classList.add('sel');

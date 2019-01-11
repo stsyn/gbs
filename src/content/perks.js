@@ -200,7 +200,7 @@ content.perks.c.p_fppl = {
     secrecy:50,
     whenGet:function(spec) {return 0;},
     onTask:function(spec) {
-        //Проверка на задание-обучение
+        if (content.works[world.tasks[spec.tasks[0]].id].type.has('study')) spec.stats.experience += 10;
         return 0;
     },
     onIdle:function(spec) {return 0;}
@@ -215,9 +215,10 @@ content.perks.c.p_mstr = {
         spec.shadow.charismaMult*=1.2;
         spec.shadow.intellectMult*=1.2;
         spec.shadow.enduranceMult*=1.2;
-        spec.shadow.levelUpExpMult*=1.5;
+        spec.shadow.levelUpExpMult*=1.1;
     },
     onTask:function(spec) {
+        if (content.works[world.tasks[spec.tasks[0]].id].type.has('study')) spec.stats.experience -= 1;
         //Проверка на задание-обучение
         return 0;
     },
@@ -280,15 +281,10 @@ content.perks.c.p_prnc = {
     name:'Параноик',
     description:'',
     secrecy:5,
+	//actions at content.works.w_watching
     whenGet:function(spec) {return 0;},
-    onTask:function(spec) {
-        //Проверки и действия
-        return 0;
-    },
-    onIdle:function(spec) {
-        //Проверки и действия
-        return 0;
-    }
+    onTask:function(spec) {return 0;},
+    onIdle:function(spec) {return 0;}
 };
 
 content.perks.perkVarPool.push({
@@ -334,7 +330,7 @@ content.perks.perkVarPool.push({
         )/100;
 		if (x>50) x = 50;
     },
-    list:['p_prnc']
+    list:['p_runr']
 });
 
 ////////////////////////////////////////////////////
@@ -344,7 +340,10 @@ content.perks.c.p_hero = {
     name:'Герой',
     description:'',
     secrecy:90,
-    whenGet:function(spec) {return 0;},
+    whenGet:function(spec) {
+        spec.shadow.charismaMult*=1.2;
+		return 0;
+	},
     onTask:function(spec) {return 0;},
     onIdle:function(spec) {return 0;}
 };
@@ -355,7 +354,7 @@ content.perks.perkVarPool.push({
         let x = (spec.specie == 4?world.ministries.Z.stats.military:world.ministries.EQ.stats.military);
 		if (x>50) return;
     },
-    list:['p_prnc']
+    list:['p_hero']
 });
 
 ////////////////////////////////////////////////////
@@ -364,7 +363,7 @@ content.perks.c.p_drnk = {
     id:'p_drnk',
     name:'Алкоголик',
     description:'',
-    secrecy:75,
+    secrecy:40,
     whenGet:function(spec) {
 		spec.shadow.loyaltyBonus += 20;
 	},
@@ -382,6 +381,27 @@ content.perks.perkVarPool.push({
         return 2*(spec.specie == 4?world.ministries.Z.stats.treat:world.ministries.EQ.stats.treat)/100;
     },
     list:['p_drnk']
+});
+
+////////////////////////////////////////////////////
+
+content.perks.c.p_lucky = {
+    id:'p_lucky',
+    name:'Везунчик',
+    description:'',
+    secrecy:10,
+    whenGet:function(spec) {return 0;},
+    onTask:function(spec) {return 0;},
+    onIdle:function(spec) {return 0;},
+	onIdleTick:function(spec) {return 0;}
+};
+
+content.perks.perkVarPool.push({
+    id:'pv_lucky',
+    chanceCalc: function(world,spec) {
+        return 1;
+    },
+    list:['p_lucky']
 });
 
 //////////////////////////////////////////////////

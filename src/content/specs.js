@@ -208,6 +208,9 @@ attributes:{
     satisfaction: 50,
     secrecy: 30
     },
+dialState:{
+	id:'Luna_Dialogue1'
+},
 id:'Luna',
 ministry: 'EQ',
 owner: 'EQ',
@@ -247,7 +250,6 @@ location:'canterlot',
 perks: ['p_gnus','p_mstr','p_trtr']
 };
 
-
 content.presetedSpecs.GB = {
 	stats:{
     name:'Голденблад',
@@ -283,7 +285,6 @@ perks: ['p_gb_sys']
 
 content.presetedSpecs.BM = {
 stats:{
-	id:'s_BM',
     name:'Биг Макинтош',
     charisma: 30,
     intellect: 20,
@@ -305,6 +306,7 @@ attributes:{
     satisfaction: 60,
     secrecy: 100
     },
+id:'s_BM',
 ministry: 'EQ',
 owner: 'EQ',
 location:'canterlot',

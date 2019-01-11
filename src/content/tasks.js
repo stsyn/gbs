@@ -283,6 +283,7 @@ content.works.w_hire = {
 	maxWorkers:-1,
 	minWorkers:0,
 	onlyOne:true,
+	type:[],
 	updateInterval:360,
 	data:{
 		string:'Нанять специалиста?',
@@ -380,7 +381,7 @@ content.works.w_intStudying = {
 	update:function(t) {return 0;},
 	updatePerSpec:function(t, spec) {
 		if (spec.attributes.secrecy>25) spec.attributes.secrecy--;
-		if (Math.random()*Math.random()*Math.random()*0.4 > utils.getIntellect(spec)) {
+		if (Math.random()*Math.random()*Math.random()*0.4 > utils.getIntellect(spec) && !luckCheck(spec, 0.5)) {
 			utils.failTask(t);
 			return;
 		}
@@ -441,7 +442,7 @@ content.works.w_endStudying = {
 	updatePerSpec:function(t, spec) {
 		if (spec.attributes.secrecy>25) spec.attributes.secrecy--;
 		t.value++;
-		if (Math.random()*Math.random()*Math.random()*0.4 > utils.getEndurance(spec)) {
+		if (Math.random()*Math.random()*Math.random()*0.4 > utils.getEndurance(spec) && !luckCheck(spec, 0.5)) {
 			spec.attributes.health -= parseInt(Math.random()*Math.random()*10);
 			if (spec.attributes.health/spec.attributes.maxHealth<=0.20) utils.failTask(t);
 		}
@@ -457,6 +458,10 @@ content.works.w_endStudying = {
 		if (world.specs[t.workers[0]].attributes.health > 0) {
 			utils.addNotify('specs', world.specs[t.workers[0]].id, 1, this.data.failString);
 			world.ministries[world.specs[t.workers[0]].ministry].resources.money.value += t.data.cost/2*t.value/t.target;
+		}
+		else {
+			utils.addNotify('specs', world.specs[t.workers[0]].id, 1, this.data.deadString);
+			world.ministries[world.specs[t.workers[0]].ministry].resources.money.value += t.data.cost/2*t.value/t.target+1000;
 		}
 	}
 };
@@ -507,16 +512,14 @@ content.works.w_chrStudying = {
 		}
 		t.value++;
 	},
-	whenFailed:function(taskId) {
-		utils.addNotify('specs', world.specs[t.workers[0]].id, 1, this.data.failString.replace('%spec%', world.specs[t.workers[0]].stats.name));
-	}
+	whenFailed:function(taskId) {return 0;}
 };
 
 content.works.w_watching = {
 	id:'w_watching',
 	iconUrl:'res/icons/tasks.png',
 	iconOffset:3,
-	name:'Шпионаж',
+	name:'Наблюдение',
 	description:'Незаметное наблюдение за целью. В случае, если специалист будет обнаружен, это может повлечь неприятные дипломатические последствия. ',
 	target:100,
 	maxWorkers:1,
@@ -536,7 +539,7 @@ content.works.w_watching = {
 	},
 	noneRequiments:function(ministry, location, targetSpec) {
 		let ts = world.specs[targetSpec];
-		return utils.getSpecSecrecy(ts);
+		return (utils.getSpecSecrecy(ts)-30)/70*100;
 	},
 	massRequiments:function(ids, ministry, location, targetSpec) {
 		let ts = world.specs[targetSpec];
@@ -551,6 +554,10 @@ content.works.w_watching = {
 		if (utils.getSpecSecrecy(ts) > consts.visibility[2])
 			chara = utils.getLevel(ts)*250;
 		let i = utils.getActualCharisma(world.specs[ids[0]])/chara;
+		
+		//
+		let x = ts.perks.get('p_prnc');
+		if (x != ts.perks.length && ts.isPerkExplored[x]) chance *= 1.3;
 		
 		if (i>1) i = 1;
 		return chance*i;
@@ -571,22 +578,30 @@ content.works.w_watching = {
 	update:function(t) {return 0},
 	updatePerSpec:function(t, spec) {
 		let ts = world.specs[t.targetSpec];
+		
+		// проверка харизмы
 		if (Math.random()*Math.random()*Math.random()*Math.random()*t.timeElapsed/1440 > (utils.getActualCharisma(spec)/utils.getActualCharisma(ts))) {
 			utils.failTask(t);
 		}
-		else if (Math.random()*Math.random()*Math.random()*Math.random() > (utils.getActualIntellect(spec)/1000)) {
+		
+		//проверка интеллекта
+		else if (Math.random()*Math.random()*Math.random()*Math.random() > (utils.getActualIntellect(spec)/1500)) {
 			utils.failTask(t);
 		}
 		else {
-			ts.attributes.secrecy-=0.25;
-			if (ts.attributes.secrecy<0) ts.attributes.secrecy = 0;
-			t.value = 100-ts.attributes.secrecy;
+			if (ts.ministry == game.player.ministry.id || (world.ministries[ts.ministry].stats.loyalty/100 > Math.random())) {
+				let x = spec.perks.get('p_prnc');
+				ts.attributes.secrecy/=(x!=spec.perks.length?1.12:1.07);
+				if (ts.attributes.secrecy<0) ts.attributes.secrecy = 0;
+				t.value = 70-ts.attributes.secrecy;
+			}
 		}
 	},
 	whenStopped:function(taskId) {return 0;},
 	whenStoppedPerSpec:function(taskId) {return 0;},
 	whenFailed:function(t) {
 		let ts = world.specs[t.targetSpec];
+		if (luckCheck(ts, 0.25)) return;
 		if (t.ministry == game.player.ministry) {
 			ts.attributes.worktypeSatisfatcion -= 50;
 		}
@@ -595,9 +610,49 @@ content.works.w_watching = {
 		}
 		let u = utils.getActualEndurance(ts) - utils.getActualEndurance(world.specs[t.workers[0]]);
 		if (u>0) {
-			world.specs[t.workers[0]].attributes.health -= Math.random*(u/50);
+			world.specs[t.workers[0]].attributes.health -= Math.random*(Math.sqrt(u/10));
 		}
 	}
+};
+
+content.works.w_dialogue = {
+	id:'w_dialogue',
+	iconUrl:'res/icons/tasks.png',
+	iconOffset:4,
+	name:'Общение',
+	description:'Лично Ваша попытка поговорить с целью. ',
+	target:1,
+	maxWorkers:-1,
+	minWorkers:0,
+	onlyOne:true,
+	updateInterval:20,
+	type:[],
+	data:{
+		string:'Начать диалог? Возможно, Вам придется двигаться до цели.',
+	},
+	
+	noneCalcCost:function(ministry, location, targetSpec) {
+		return {};
+	},
+	calcCost:function(spec, ministry, location, targetSpec) {
+		return {mainText:this.data.string};
+	},
+	noneRequiments:function(ministry, location, targetSpecId) {
+		return ((world.specs[targetSpecId].dialState == undefined || world.specs[targetSpecId].dialState.dialogueId == undefined)?0:100);
+	},
+	massRequiments:function(ids, ministry, location, targetSpecId) {return 100;},
+	requiments:function(spec) {return 100},
+	whenStart:function(taskId) {
+		let ts = world.specs[taskId.targetSpec];
+		utils.startDialogue(ts, taskId);
+	},
+	whenStartPerSpec:function(t, spec) {return 0},
+	whenComplete:function(t) {return 0},
+	update:function(t) {return 0},
+	updatePerSpec:function(task, worker) {return 0},
+	whenStopped:function(taskId) {return 0;},
+	whenStoppedPerSpec:function(taskId) {return 0;},
+	whenFailed:function(taskId) {return 0}
 };
 
 content.works.w_helping = {
@@ -722,6 +777,7 @@ function m_init() {
 	content.worklists.withSpec.push(content.works.w_fire);
 	content.worklists.withSpec.push(content.works.w_fireFree);
 	
+	content.worklists.perSpec.push(content.works.w_dialogue);
 	content.worklists.perSpec.push(content.works.w_hire);
 	content.worklists.perSpec.push(content.works.w_watching);
 	

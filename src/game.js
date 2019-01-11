@@ -40,6 +40,9 @@ content.gameCreators.push(function() {
 	game.UI.pauses = 0;
 	
 	game.UI.popups = [];
+	game.UI.dialState = {
+		current:null
+	};
 	game.UI.selectedMinistry = 'OIA';
 	game.UI.selectedCity = 'canterlot';
 	game.UI.bottomRenderCounter = 0;
@@ -245,7 +248,7 @@ content.gameCycles.main = function() {
 	game.UI.bottomRenderCounter--; 
 	
 	//////////////////////////////////////////////////////
-	//					Окно специалистов		
+	//			     Окно специалистов		
 	//////////////////////////////////////////////////////
 	
 	if (document.getElementById("specialists").classList.contains('d')) {
@@ -390,11 +393,86 @@ content.gameCycles.main = function() {
 		Inferno.render(game.UI.taskContainer, document.getElementById("selectSpecs").getElementsByClassName('cc')[0]);
 	}
 	
+	//////////////////////////////////////////////////////
+	//				    Окно диалога
+	//////////////////////////////////////////////////////
+	
+	if (document.getElementById("dialogue").classList.contains('d')) {
+		let DS = game.UI.dialState;
+		let l_spec = DS.current.attachedSpecialistId;
+		let d = content.dialogues[DS.current.dialogueId];
+		let n = d.tree[DS.current.currentNode];
+		if (game.UI.dialState.current.overridingSpecialistId != -1) l_spec = game.UI.dialState.current.overridingSpecialistId;
+		let x = DS.overrideSpecialist;
+		if (typeof x == 'string') l_spec = utils.getSpecById(x).id;
+		else if (typeof x == 'function') l_spec = x(DS.current);
+
+		if (l_spec != undefined) {
+			l_spec = world.specs[l_spec];
+			if (utils.getSpecSecrecy(l_spec)<consts.visibility[1]) {
+				if (l_spec.stats.portrait.url != '' && l_spec.stats.portrait.url != undefined) game.UI.specDialImage = Inferno.createElement('img', {src:l_spec.stats.portrait.url, style:'transform: scale(-1, 1);'}, null);
+				else game.UI.specDialImage = content.portraits[l_spec.stats.portrait.id].func(l_spec, 'color', {dialogue:true});
+			}
+			else game.UI.specDialImage = Inferno.createElement('img', {src:'res/portraits/unknown.png'}, null);
+			if (utils.getSpecSecrecy(l_spec)<consts.visibility[1]) game.UI.specDialName = l_spec.stats.name;
+			else game.UI.specDialName = '???';
+		}
 		
+		if (game.UI.dialState.renderPosition >= DS.text.length-1) game.UI.dialState.rendered = true;
+		let visibleText = DS.text.slice(0, game.UI.dialState.renderPosition+1);
+		let hiddenText = DS.text.slice(game.UI.dialState.renderPosition);
+		let hasChoice = !(DS.choices == undefined || DS.choices.length == 0);
+		
+		if (!game.UI.dialState.rendered) {
+			let ch = DS.text.charAt(game.UI.dialState.renderPosition);
+			if (strings.dialoguesAnim.slowChars.indexOf(ch) > -1) {
+				if (game.UI.dialState.renderInt >= 1) {
+					game.UI.dialState.renderInt = 0;
+					game.UI.dialState.renderPosition++;
+				}
+				else game.UI.dialState.renderInt++;
+			}
+			else if (strings.dialoguesAnim.verySlowChars.indexOf(ch) > -1) {
+				if (game.UI.dialState.renderInt >= 3) {
+					game.UI.dialState.renderInt = 0;
+					game.UI.dialState.renderPosition++;
+				}
+				else game.UI.dialState.renderInt++;
+			}
+			else if (strings.dialoguesAnim.fastChars.indexOf(ch) > -1) {
+				while (strings.dialoguesAnim.fastChars.indexOf(ch) > -1) {
+					game.UI.dialState.renderPosition++;
+					ch = DS.text.charAt(game.UI.dialState.renderPosition);
+				}
+			}
+			else game.UI.dialState.renderPosition++;
+		}
+		
+		game.UI.dialogueChoices = [];
+		if (DS.choices != undefined) game.UI.dialogueChoices = DS.choices.map(function (m) {
+			if (m.generate != undefined) m = m.generate(game.UI.dialState.current);
+			return Inferno.createElement('div', {className:'b fs', onClick:function() {utils.handleDialogueChoise(m)}}, m.text);
+		});
+				
+		game.UI.dialogueContainer = Inferno.createElement('div', {className:'dial-container', onClick:(!hasChoice || !game.UI.dialState.rendered)?function() {if (!game.UI.dialState.rendered) {game.UI.dialState.rendered = true, game.UI.dialState.renderPosition = Infinity} else utils.handleDialogueChoise()}:function() {}}, 
+			Inferno.createElement('div', {className:'dial-text'},
+				Inferno.createElement('span', {}, visibleText),
+				Inferno.createElement('span', {style:{opacity:0}}, hiddenText),
+				(game.UI.dialState.rendered && !hasChoice?Inferno.createElement('div', {className:'dial-continue'}, strings.UI.clickToContinue):''),
+				(game.UI.dialState.rendered && hasChoice?
+					Inferno.createElement('div', {className:'dial-actions'},game.UI.dialogueChoices)
+				:'')
+			),
+			(l_spec!=undefined?Inferno.createElement('div', {className:'dial-portrait'},game.UI.specDialImage):''),
+			(l_spec!=undefined?Inferno.createElement('div', {className:'dial-name'},game.UI.specDialName):'')
+		);
+		Inferno.render(game.UI.dialogueContainer, document.getElementById("dialogue").getElementsByClassName('cc')[0]);
+	}
+	
 	//////////////////////////////////////////////////////
 	//					Окно городов		
 	//////////////////////////////////////////////////////
-	
+		
 	if (document.getElementById("equestria").classList.contains('d')) {
 		game.UI.cityList = [];
 		for (let city in world.cities) {
@@ -784,7 +862,7 @@ content.gameCycles.main = function() {
 					Inferno.createElement('div', {className:'d'}, 
 						Inferno.createElement('div', {className:'task', style:'background-image:url('+work.iconUrl+');background-position: '+(-work.iconOffset*100)+'% 0'}, ' '),
 						work.name,
-						Inferno.createElement('div', {className:'c'}, work.noneRequiments(l_spec.ministry, l_spec.location, l_spec.id)+'%')
+						Inferno.createElement('div', {className:'c'}, parseInt(work.noneRequiments(l_spec.ministry, l_spec.location, l_spec.id))+'%')
 					),
 					Inferno.createElement('div', {className:'e'},work.description)
 				)
@@ -943,12 +1021,12 @@ content.gameCycles.main = function() {
 									Inferno.createElement('span', {className:'c'}, (utils.ownedByPlayer(l_spec)?utils.getLoyalty(l_spec):'???'))
 								)
 							),
-							Inferno.createElement('div', {className:'line linebar st_pyo'}, 
+							/*Inferno.createElement('div', {className:'line linebar st_pyo'}, 
 								Inferno.createElement('div', {className:'p',style:'width:'+(utils.ownedByPlayer(l_spec)?utils.calcPayoutV(l_spec):0)+'%'}, null),
 								Inferno.createElement('div', {className:'d'}, strings.UI.payoutLevel,
 									Inferno.createElement('span', {className:'c'}, (utils.ownedByPlayer(l_spec)?l_spec.attributes.currentPayout:'???'))
 								)
-							),
+							),*/
 							Inferno.createElement('div', {className:'line linebar st_stf'}, 
 								Inferno.createElement('div', {className:'p',style:'width:'+(utils.ownedByPlayer(l_spec)?utils.getSatisfaction(l_spec):0)+'%'}, null),
 								Inferno.createElement('div', {className:'d'}, strings.UI.satisfaction,
@@ -983,7 +1061,7 @@ content.gameCycles.main = function() {
 						),
 						(utils.ownedByPlayer(l_spec)?Inferno.createElement('div', {className:'pad sp_half'},
 							l_notice,
-							Inferno.createElement('br'),
+							Inferno.createElement('br')/*,
 							(l_spec.attributes.unpaid>0?strings.UI.messages.unpaid+parseInt(l_spec.attributes.unpaid):''),
 							Inferno.createElement('div', {className:'pad sp_inv'},
 								'Изменить уровень оплаты',
@@ -993,7 +1071,7 @@ content.gameCycles.main = function() {
 								Inferno.createElement('div', {className:'b', style:'width:15%', onClick:function() {l_spec.attributes.currentPayout++;}},'+'),
 								Inferno.createElement('div', {className:'b', style:'width:16%', onClick:function() {l_spec.attributes.currentPayout+=10;}},'++'),
 								Inferno.createElement('div', {className:'b', style:'width:16%', onClick:function() {l_spec.attributes.currentPayout+=100;}},'+++')
-							)
+							)*/
 						):null)
 					)),
 					((utils.ownedByPlayer(l_spec)||utils.getSpecSecrecy(l_spec)<consts.visibility[4])?Inferno.createElement('div', {className:'pad sp_info'}, game.UI.currentWorks):null),

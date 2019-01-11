@@ -50,6 +50,11 @@ var strings = {
 		iconOffsets:{}
 	},
 	useCases:true,
+	dialoguesAnim:{
+		slowChars:', ',
+		verySlowChars:'.!?',
+		fastChars:'0123456789-/—+:'
+	},
 	cased:{
 		g: {
 			ministries: {
@@ -79,7 +84,7 @@ var strings = {
 		}
 	},
 	classes:[
-		'Политик','Ученый','Военный','Оперативник','Шпион','Организатор','Универсал'
+		'Политик','Ученый','Военный','Оперативник','Офицер','Организатор','Универсал'
 	],
 	resources:{
 		money:'Битс'
@@ -100,6 +105,8 @@ var strings = {
 		idle:'Нет задания',
 		noWork:'Нет персональных поручений для этого специалиста',
 		noPerWork:'Нет заданий, связанных с этим специалистом',
+		
+		clickToContinue:'Кликните для продолжения',
 		
 		level:'Уровень',
 		endurance:'Выносливость',
@@ -214,6 +221,9 @@ function m_init() {
 	content.perks.c.p_work.name = 'Трудоголик';
 	content.perks.c.p_work.description = 'Не боится тяжелой и постоянной работы, но боится безделья. Образ жизни сказался на здоровье.';
 	
+	content.perks.c.p_drnk.name = 'Зависимость';
+	content.perks.c.p_drnk.description = 'Имеет зависимость от различных сильнодействующих веществ.';
+	
 	content.perks.c.p_lazy.name = 'Ленивый';
 	content.perks.c.p_lazy.description = 'Избегает работы всегда, когда это возможно.';
 	
@@ -224,13 +234,13 @@ function m_init() {
 	content.perks.c.p_idea.description = 'Работает не за деньги, а за идею.';
 	
 	content.perks.c.p_gnus.name = 'Гений';
-	content.perks.c.p_gnus.description = 'Его талант в научной сфере сразу бросается в глаза. Вот только остальные области несколько страдают.';
+	content.perks.c.p_gnus.description = 'Талант в научной сфере сразу бросается в глаза. Вот только остальные области несколько страдают.';
 	
-	content.perks.c.p_art.name = 'Артист';
-	content.perks.c.p_art.description = 'Его талант в общении с пони сразу бросается в глаза. Вот только остальные области несколько страдают.';
+	content.perks.c.p_art.name = 'Душа компании';
+	content.perks.c.p_art.description = 'Талант в общении с пони сразу бросается в глаза. Вот только остальные области несколько страдают.';
 	
 	content.perks.c.p_sldr.name = 'Вояка';
-	content.perks.c.p_sldr.description = 'Его талант в боевом искусстве сразу бросается в глаза. Вот только остальные области несколько страдают.';
+	content.perks.c.p_sldr.description = 'Талант в боевом искусстве сразу бросается в глаза. Вот только остальные области несколько страдают.';
 	
 	content.perks.c.p_sold.name = 'Продажный';
 	content.perks.c.p_sold.description = 'Любой каприз за деньги. А готовые платить найдутся всегда.';

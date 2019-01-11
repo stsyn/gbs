@@ -64,11 +64,11 @@ function init() {
 		toki:['toki/src/utils.js']
 	}
 	var compilations = {
-		def:['src/zero.js','src/entities/ministries.js','src/entities/cities.js','src/entities/messages.js','src/entities/world.js','src/entities/perks.js','src/entities/specs.js','src/entities/tasks.js', 'src/player.js', 'src/game.js'],
+		def:['src/zero.js','src/entities/ministries.js','src/entities/cities.js','src/entities/dialogues.js','src/entities/messages.js','src/entities/world.js','src/entities/perks.js','src/entities/specs.js','src/entities/tasks.js', (conf.youtube?'src/player.js':'src/player_empty.js'), 'src/game.js'],
 		toki:['toki/src/zero.js','toki/src/entities/ministries.js','toki/src/entities/cities.js','toki/src/entities/messages.js','toki/src/entities/world.js','toki/src/entities/perks.js','toki/src/entities/specs.js','toki/src/entities/tasks.js', 'toki/src/player.js', 'toki/src/game.js']
 	}
 	var contentpacks = {
-		def:['src/content/portraits.js','src/content/specs.js','src/content/cities.js','src/content/perks.js','src/content/tasks.js', 'src/content/ministries.js'],
+		def:['src/content/portraits.js','src/content/dialogues.js','src/content/specs.js','src/content/cities.js','src/content/perks.js','src/content/tasks.js', 'src/content/ministries.js'],
 		toki:['toki/src/content/portraits.js','toki/src/content/specs.js','toki/src/content/cities.js','toki/src/content/perks.js','toki/src/content/tasks.js', 'toki/src/content/ministries.js']
 	}
 	var currentCompilation = conf.engine;
@@ -101,7 +101,7 @@ function init() {
 		clearTimeout(timer);
 		ap = true;
 		loaders.push(m_init);
-		if (!loadingFail) setTimeout(a, 33);
+		if (!loadingFail) setTimeout(a, 2);
 		else m_init();
 		m_init = nx;
 	}
@@ -120,6 +120,10 @@ function init() {
 			}
 			else finish_init(loaders, conf);
 			return;
+		}
+		if (m[i] == undefined || m[i] == '') {
+			i++;
+			a();
 		}
 		document.querySelector('#popUp .loadtext').innerHTML = 'Loading '+m[i]+'...';
 		document.querySelector('#popUp .loadline').style.width = 100*i/m.length+'%';
@@ -143,13 +147,13 @@ function finish_init(loaders, c) {
 		let afa = function () {
 			loaders[i]();
 			document.querySelector('#popUp .loadline').style.width = 100*i/loaders.length+'%';
-			if (++i<loaders.length) setTimeout(afa, 10);
+			if (++i<loaders.length) setTimeout(afa, 1);
 			else {
 				document.querySelector('#popUp .loadline').style.width = '100%';
-				setTimeout(bf, 10);
+				setTimeout(bf, 1);
 			}
 		};
-		setTimeout(afa, 10);
+		setTimeout(afa, 1);
 	};
 	
 	var bf = function() {
@@ -158,10 +162,10 @@ function finish_init(loaders, c) {
 		let bfa = function () {
 			content.gameCreators[i]();
 			document.querySelector('#popUp .loadline').style.width = 100*i/content.gameCreators.length+'%';
-			if (++i<content.gameCreators.length) setTimeout(bfa, 10);
+			if (++i<content.gameCreators.length) setTimeout(bfa, 1);
 			else {
 				document.querySelector('#popUp .loadline').style.width = '100%';
-				setTimeout(cf, 10);
+				setTimeout(cf, 1);
 			}
 		}
 		setTimeout(bfa, 10);
@@ -174,14 +178,14 @@ function finish_init(loaders, c) {
 			let cfa = function()  {
 				content.worldCreators[i](world);
 				document.querySelector('#popUp .loadline').style.width = 100*i/content.worldCreators.length+'%';
-				if (++i<content.worldCreators.length) setTimeout(bfa, 10);
+				if (++i<content.worldCreators.length) setTimeout(bfa, 1);
 				else {
 					world.config = c;
 					document.querySelector('#popUp .loadline').style.width = '100%';
-					setTimeout(df, 10);
+					setTimeout(df, 1);
 				}
 			}
-			setTimeout(cfa, 10);
+			setTimeout(cfa, 1);
 		}
 		else {
 			document.querySelector('#popUp .loadline').style.width = 0;
@@ -199,7 +203,7 @@ function finish_init(loaders, c) {
 				world = JSON.parse(localStorage._gbs_world);
 			}
 			document.querySelector('#popUp .loadline').style.width = '100%';
-			setTimeout(df, 10);
+			setTimeout(df, 1);
 		}
 	};
 	
@@ -209,13 +213,13 @@ function finish_init(loaders, c) {
 		let dfa = function ()  {
 			content.gameLaunchers[i]();
 			document.querySelector('#popUp .loadline').style.width = 100*i/content.gameLaunchers.length+'%';
-			if (++i<content.gameLaunchers.length) setTimeout(dfa, 10);
+			if (++i<content.gameLaunchers.length) setTimeout(dfa, 1);
 			else {
 				document.querySelector('#popUp .loadline').style.width = '100%';
-				setTimeout(ef, 10);
+				setTimeout(ef, 1);
 			}
 		}
-		setTimeout(dfa, 10);
+		setTimeout(dfa, 1);
 	};
 	
 	var ef = function() {
@@ -227,5 +231,5 @@ function finish_init(loaders, c) {
 		location.hash = '';
 	};
 	
-	setTimeout(af, 100);
+	setTimeout(af, 1);
 }

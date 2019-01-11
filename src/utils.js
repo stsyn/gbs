@@ -6,7 +6,7 @@ function consts_proto() {
 	this.specUpdateInterval = 12*60;
 	this.sleepOverWork = 4;
 	this.workOverflow = 8;
-	this.maxNotifies = 50;
+	this.maxNotifies = 100;
 	this.workCheckInterval = 60;
 	
 	//факт наличия; известно только имя, класс и внешность; известны характеристики; местоположение и здоровье; текущие задания
@@ -216,14 +216,14 @@ var utils = {
 	getActualEndurance(spec) {return parseInt(Math.pow(utils.getEndurance(spec),1.5)*utils.levelAmplifier(spec)*(spec.stats.specie==3?5:1)*spec.shadow.enduranceMult)},
 	
 	getSatisfaction(spec) {
-		let i, s=spec.shadow.workSatisfactionMult+spec.shadow.workTypeSatisfactionMult+spec.shadow.payoutSatisfactionMult;
+		let i, s=spec.shadow.workSatisfactionMult+spec.shadow.workTypeSatisfactionMult/*+spec.shadow.payoutSatisfactionMult*/;
 		i = parseInt(
 			spec.attributes.workSatisfaction*spec.shadow.workSatisfactionMult*(
 				spec.attributes.workSatisfaction<0?spec.shadow.workPenaltyMult:spec.shadow.relaxSatisfactionMult)/s + 
-				spec.attributes.worktypeSatisfaction*spec.shadow.workTypeSatisfactionMult/s +
-				spec.attributes.payoutSatisfaction*spec.shadow.payoutSatisfactionMult/s
+				spec.attributes.worktypeSatisfaction*spec.shadow.workTypeSatisfactionMult/s /*+
+				spec.attributes.payoutSatisfaction*spec.shadow.payoutSatisfactionMult/s*/
 			) + spec.shadow.satisfactionBonus;
-		if (spec.attributes.payout !=0) i -= (spec.attributes.unpaid*10/spec.attributes.payout)
+		//if (spec.attributes.payout !=0) i -= (spec.attributes.unpaid*10/spec.attributes.payout)
 		i = parseInt((i+70)/2);
 		if (i>100) i=100;
 		if (i<0) i=0;
@@ -231,10 +231,10 @@ var utils = {
 	},
 	
 	getLoyalty(spec) {
-		let i, s=spec.shadow.satisfactionLoyaltyMult*2+spec.shadow.payoutLoyaltyMult;
+		let i, s=spec.shadow.satisfactionLoyaltyMult*2/*+spec.shadow.payoutLoyaltyMult*/;
 		i = parseInt(
-			utils.getSatisfaction(spec)*2*spec.shadow.satisfactionLoyaltyMult/s + 
-			spec.attributes.payoutSatisfaction*spec.shadow.payoutLoyaltyMult/s
+			utils.getSatisfaction(spec)*2*spec.shadow.satisfactionLoyaltyMult/s/* + 
+			spec.attributes.payoutSatisfaction*spec.shadow.payoutLoyaltyMult/s*/
 			) + spec.shadow.loyaltyBonus;
 		i = parseInt((i+70)/2);
 		if (i>100) i=100;
@@ -390,7 +390,83 @@ var utils = {
 		if (!world.tasks[spec.tasks[0]].hasStarted) return content.works.w_sys_relaxing; 
 		else return world.tasks[spec.tasks[0]];
 	},
+
+	setDialogueToSpecialist(specialist, dialogue) {
+		specialist.dialState = new dialState(specialist, dialogue);
+	},
+	
+	isDialoguePossible(specialist) {
+		if (specialist.dialState == undefined) return false;
+		if (!specialist.dialState.isAvailable) return false;
+		if (!content.dialogues[specialist.dialState.dialogueId].checkAvailibility(specialist.dialState)) return false;
+		return true;
+	},
+	
+	startDialogue(specialist, taskId) { //can also be called with dialogue id
+		if (utils.isDialoguePossible(specialist) || typeof specialist == 'string') {
+			let dialState;
+			if (typeof specialist == 'string') {
+				dialState = world.unattachedDialState;
+				dialState.id = specialist;
+			}
+			else dialState = specialist.dialState;
+			game.UI.dialState.taskId = taskId;
+			game.UI.dialState.current = dialState;
+			utils.pauseGame();
+			document.getElementById('dialogue').classList.add('d');
+			utils.changeDialogueNode(dialState, content.dialogues[dialState.dialogueId].startingNode(dialState));
+		}
+	},
+	
+	handleDialogueChoise(ch) {
+		let dialState = game.UI.dialState.current;
+		let d = content.dialogues[game.UI.dialState.current.dialogueId];
+		let n = d.tree[game.UI.dialState.current.currentNode];
+		if (ch == undefined && (n.choices == undefined || n.choices.length == 0)) {
+			let node = game.UI.dialState.current.currentNode;
+			if (node.next != undefined) {
+				utils.changeDialogueNode(dialState, node.next);
+				return;
+			}
+			let index = parseInt(node.slice(node.indexOf(/\d+$/)));
+			let bname = node.slice(0, node.indexOf(/\d+$/));
+			utils.changeDialogueNode(dialState, bname+(index+1));
+		}
+		else {
+			if (ch.unavailable) return;
+			if (ch.action != undefined) ch.action(dialState);
+			utils.changeDialogueNode(dialState, ch.newNode);
+		}
+	},
+	
+	changeDialogueNode(dialState, node) {
+		if (node == '_end') {
+			utils.stopDialogue(dialState);
+			return;
+		}
+		dialState.currentNode = node;
+		game.UI.dialState.rendered = false;
+		game.UI.dialState.renderPosition = 0;
+		game.UI.dialState.renderInt = 0;
 		
+		let d = content.dialogues[dialState.dialogueId];
+		let n = d.tree[node];
+		if (n.onShow != undefined) n.onShow(dialState);
+		if (typeof n.next == 'function') game.UI.dialState.next = n.next(dialState);
+		else game.UI.dialState.next = n.next;
+		if (typeof n.choices == 'function') game.UI.dialState.choices = n.choices(dialState);
+		else game.UI.dialState.choices = n.choices;
+		if (typeof n.text == 'function') game.UI.dialState.text = n.text(dialState);
+		else game.UI.dialState.text = n.text;
+	},
+	
+	stopDialogue(dialState) {
+		game.UI.dialState.current = null;
+		if (game.UI.dialState.taskId != undefined) utils.completeTask(game.UI.dialState.taskId);
+		utils.unpauseGame();
+		document.getElementById('dialogue').classList.remove('d');
+	},
+	
 	closePopup() {
 		utils.unpauseGame();
 		let e = document.getElementById("popup");
@@ -635,7 +711,7 @@ var utils = {
 		if (spec.attributes.workSatisfaction>100) spec.attributes.workSatisfaction = 100;
 		
 		//перерасчет оплаты
-		utils.calcPayout(spec);
+		/*utils.calcPayout(spec);
 		if (game.player.resources.money.value > 0) {
 			let x = spec.attributes.currentPayout-game.player.resources.money.value;
 			
@@ -678,7 +754,7 @@ var utils = {
 			if (spec.attributes.payoutSatisfaction > d) spec.attributes.payoutSatisfaction = d;
 		}
 		else if (spec.attributes.payoutSatisfaction < 0) spec.attributes.payoutSatisfaction++;
-		else if (spec.attributes.payoutSatisfaction > 0) spec.attributes.payoutSatisfaction--;
+		else if (spec.attributes.payoutSatisfaction > 0) spec.attributes.payoutSatisfaction--;*/
 	},
 	
 	specTick(spec) {	
@@ -855,10 +931,12 @@ var utils = {
 			let c=pat.calcCost(work.workers, work.ministry, work.location, world.specs[work.targetSpec]);
 			for (let r in c) {
 				if (r == 'text') continue;
+				if (r == 'mainText') continue;
 				if ((work.workers.length>0 && utils.ownedByPlayer(world.specs[work.workers[0]])) || (work.workers.length==0 && work.ministry==game.player.ministry)) if (game.player.resources[r].value<c[r]) utils.destroyWork(work,5);
 			}
 			for (let r in c) {
 				if (r == 'text') continue;
+				if (r == 'mainText') continue;
 				game.player.resources[r].value-=c[r];
 			}
 			utils.startWork(pat, work);
@@ -904,10 +982,14 @@ var utils = {
 	},
 	
 	startTask(task, spec, ministry, targetSpec, location, insertBefore) {
+		if (task.id == 'w_dialogue' && spec.length == 0) {
+			utils.startTask(task, [utils.getSpecById('GB').id], ministry, targetSpec, location, insertBefore);
+			return;
+		}
 		let maxTimeout = 0;
 		for (let j=0; j<spec.length; j++) {
 			let s = world.specs[spec[j]].location;
-			if (maxTimeout<Math.pow(world.roadmap[world.homecity][s],0.75)*world.data.taskStartTimeout) maxTimeout = Math.pow(world.roadmap[world.homecity][s],0.75)*world.data.taskStartTimeout;
+			if (maxTimeout<Math.pow(world.roadmap[world.homecity][s],0.75)*world.data.taskStartTimeout) maxTimeout = Math.pow(world.roadmap[world.homecity][s],0.75)*(world.specs[spec[j]].internalId == 'GB'?10:world.data.taskStartTimeout);
 		}
 		let timeout = maxTimeout;
 		let i;
@@ -1063,7 +1145,7 @@ var utils = {
 	newDayTick() {
 		if (world.data.weekDay == 0) {
 			world.data.weekDay = 7;
-			game.player.resources.money.value += (world.data.specs<10?world.data.specs:10)*1750;
+			//game.player.resources.money.value += (world.data.specs<10?world.data.specs:10)*1750;
 			world.data.specs = game.player.ministry.specs.length-1;
 		}
 		if (game.player.ministry.specs.length-1 < world.data.specs) world.data.specs = game.player.ministry.specs.length-1;
@@ -1133,6 +1215,11 @@ var utils = {
 	getCityActualTech(city) {return parseInt(utils.getCityTech(city)*city.attributes.techMult*city.attributes.ponyCount)},
 	
 	getCityActualIndustrial(city) {return parseInt(utils.getCityIndustrial(city)*city.attributes.industrialMult*city.attributes.ponyCount)},
+
+	luckCheck(spec, target) {
+		if (spec.perks.has('p_lucky')) return true;
+		else return (Math.random() < target);
+	},
 	
 	hsv2rgb(h, s, v) {
 		let r, g, b, i, f, p, q, t;

@@ -41,7 +41,6 @@ let mins = {
 				(Math.random()*Math.random()>city.ministriesDisplayPart[m.id]/100) && (city.ministriesPart[m.id]/50<avpart+content.ministryCityPartDelta[m.id](city))
 			) {
 				let u = content.ministryCityPartDelta[m.id]/10;
-				console.log(u);
 				if (u>avpart) u = avpart;
 				city.ministriesPart[m.id] += u;
 				city.ministriesUsed+=u;
@@ -55,6 +54,8 @@ content.ministryTicks.MAS.push(function(m) {
 	if (m.data.cityMultAplied == undefined) m.data.cityMultAplied = {};
 	for (let cityName in world.cities) {
 		let city = world.cities[cityName];
+		
+		if (city.ministriesPart.MAS == undefined) continue;
 		
 		mins.cityExtend(m, city);
 		
@@ -82,6 +83,8 @@ content.ministryTicks.MWT.push(function(m) {
 		let city = world.cities[cityName];
 		mins.cityExtend(m, city);
 		
+		if (city.ministriesPart.MWT == undefined) continue;
+		
 		if ((m.energy>utils.getCityActualIndustrial(city)+50) && Math.random()>city.attributes.industrialPart/100) {
 			m.energy-=utils.getCityActualIndustrial(city);
 			city.attributes.techPart -= city.ministriesPart.MWT/100;
@@ -106,6 +109,8 @@ content.ministryTicks.MoA.push(function(m) {
 		let city = world.cities[cityName];
 		mins.cityExtend(m, city);
 		
+		if (city.ministriesPart.MoA == undefined) continue;
+		
 		if ((m.energy>utils.getCityActualMilitary(city)+50) && Math.random()>city.attributes.militaryPart/100) {
 			m.energy-=utils.getCityActualMilitary(city);
 			city.attributes.techPart -= city.ministriesPart.MoA/100;
@@ -129,6 +134,8 @@ content.ministryTicks.MoP.push(function(m) {
 		let city = world.cities[cityName];
 		mins.cityExtend(m, city);
 		
+		if (city.ministriesPart.MoP == undefined) continue;
+		
 		if (city.ministriesDisplayPart.MoP > 50) {
 			city.attributes.ratio+=0.12;
 			let specs = world.specs.filter(function(spec) {
@@ -148,6 +155,8 @@ content.ministryTicks.MI.push(function(m) {
 		let city = world.cities[cityName];
 		mins.cityExtend(m, city);
 		
+		if (city.ministriesPart.MI == undefined) continue;
+		
 		if (city.ministriesDisplayPart.MI > 50) {
 			for (let cityName2 in world.cities) {
 				world.cities[cityName2].attributes.ratio+=0.12;
@@ -161,6 +170,8 @@ content.ministryTicks.MoM.push(function(m) {
 	for (let cityName in world.cities) {
 		let city = world.cities[cityName];
 		mins.cityExtend(m, city);
+		
+		if (city.ministriesPart.MoM == undefined) continue;
 		
 		if (city.ministriesDisplayPart.MoM > 50) {
 			let specs = world.specs.filter(function(spec) {

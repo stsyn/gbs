@@ -16,8 +16,9 @@ window.onload = function() {
 		let x = {};
 		x.engine = form.engine.value;
 		x.content = form.content.value;
-		x.hasStory = form.story.checked;
-		x.hasTutorial = form.tutorial.checked;
+		//x.hasStory = form.story.checked;
+		//x.hasTutorial = form.tutorial.checked;
+		x.youtube = form.allowyoutube.checked;
 		if (!warned && x.hasStory && x.hasTutorial) {
 			alert('Категорически не рекомендуется одновременно включать одновременно обучение и историю!');
 			warned = true;
