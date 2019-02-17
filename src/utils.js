@@ -22,6 +22,33 @@ function consts_proto() {
 };
 var consts = new consts_proto();
 var utils = {
+	handleClick(elem) {
+		if (elem.target != undefined) elem = elem.target;
+		if (elem.tagName == 'BODY') return
+		utils.tabHandle(elem);
+		utils.handleClick(elem.parentNode);
+	},
+	
+	getTab(target) {
+		let x = target.querySelector('.tabs_head [data-tab-sel="true"]');
+		if (x != undefined) return x.dataset.tab;
+	},
+	
+	tabHandle(target) {
+		let tab = target;
+		while (tab != undefined && (tab.dataset == undefined || tab.dataset.tab == undefined))
+			tab = tab.parentNode;
+		if (tab == undefined) return;
+		let tabContainer = target.parentNode;
+		while (tabContainer != undefined && (tabContainer.classList == undefined || !tabContainer.classList.contains('tabs_head'))) 
+			tabContainer = tabContainer.parentNode;
+		
+		let tabs = tabContainer.querySelectorAll('[data-tab]');
+		for (var i=0; i<tabs.length; i++) {
+			tabs[i].dataset.tabSel = (target.dataset.tab == tabs[i].dataset.tab);
+			tabs[i].innerHTML = (target.dataset.tab == tabs[i].dataset.tab)?strings.UI.tabs[tabs[i].dataset.tab]:strings.UI.tabs[tabs[i].dataset.tab][0];
+		}
+	},
 
 	pauseGame() {
 		if (game.UI.pauses==0) {
@@ -403,11 +430,11 @@ var utils = {
 	},
 	
 	startDialogue(specialist, taskId) { //can also be called with dialogue id
-		if (utils.isDialoguePossible(specialist) || typeof specialist == 'string') {
+		if (utils.isDialoguePossible(specialist) || typeof specialist == 'string' || taskId == undefined) {
 			let dialState;
 			if (typeof specialist == 'string') {
-				dialState = world.unattachedDialState;
-				dialState.id = specialist;
+				if (world.unattachedDialState[specialist] == undefined) world.unattachedDialState[specialist]= new dialState({id:-1},content.dialogues[specialist]);
+				dialState = world.unattachedDialState[specialist];
 			}
 			else dialState = specialist.dialState;
 			game.UI.dialState.taskId = taskId;
@@ -1265,7 +1292,11 @@ Array.prototype.get = function(val) {
 	return this.length;
 };
 
- 
+
 function m_init() {
+	//content.gameLaunchers.push(function() {
+		document.body.addEventListener('click', utils.handleClick);
+		document.querySelector('[data-tab="quests"]').click();
+	//});
 	return 0;
 }

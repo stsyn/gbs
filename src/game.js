@@ -167,7 +167,7 @@ content.gameCreators.push(function() {
 	//////////////////////////////////////////////////////
 	
 	game.UI.writeNotifies = function() {
-		
+		if (!utils.getTab(document.getElementById('news')) == 'messages') return;
 		game.UI.notifiesTempList = [];
 		let i = world.lastMessageId % consts.maxNotifies, j;
 		if (world.lastMessageId >= consts.maxNotifies) for (j=i; j<consts.maxNotifies; j++) game.UI.notifiesTempList.unshift(world.messages[j])

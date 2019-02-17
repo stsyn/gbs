@@ -20,7 +20,6 @@ function world_proto() {
 };
 var world = new world_proto();
 content.worldCreators.push(function(w) {
-	w.unattachedDialState = new dialState({id:-1},{});
 	w.time = 0;
 	w.dcounter = utils.time2ms({date:1});
 	document.querySelectorAll('#top .ico1')[1].classList.add('sel');

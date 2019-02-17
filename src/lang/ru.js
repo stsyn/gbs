@@ -140,6 +140,12 @@ var strings = {
 			wrongWork:'Специалист недоволен родом своей деятельности'
 		},
 		
+		tabs: {
+			news:'Новости',
+			quests:'Цели',
+			messages:'Сводки'
+		},
+		
 		menu: {
 			pause:'Пауза',
 			continue:'Продолжить',

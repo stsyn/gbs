@@ -788,4 +788,10 @@ input:checked + label, input:checked + label .b{background:#cfc !important}
 	left:auto;
 	width:22.5%;
 	right:.6%;
-	top:6%;}
+	top:6%;
+}
+	
+.tabs_head {display:flex}
+.tabs_head [data-tab] {width:calc(1ch + 3%); overflow-x:hidden; text-overflow:clip; padding:0 5%; cursor:pointer}
+.tabs_head [data-tab]:hover {background:#226}
+.tabs_head [data-tab][data-tab-sel="true"] {flex-grow:5; background:#226}
